@@ -1,2 +1,1 @@
-# json2fsm
-JSON to Finite State Machine
+# [json2fsm] - JSON to Finite State Machine
