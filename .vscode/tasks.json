@@ -1,0 +1,63 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🔨 Pascal: Compilar",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\.vscode\\build_pascal.ps1"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "▶️ Pascal: Executar",
+      "type": "shell",
+      "command": "${workspaceFolder}\\bin\\hello.exe",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🚀 Pascal: Compilar e Executar",
+      "dependsOn": ["🔨 Pascal: Compilar"],
+      "type": "shell",
+      "command": "${workspaceFolder}\\bin\\hello.exe",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🧹 Pascal: Limpar arquivos compilados",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-Command",
+        "Remove-Item -Path '${workspaceFolder}\\bin\\*.exe', '${workspaceFolder}\\src\\*.exe', '${workspaceFolder}\\src\\*.o', '${workspaceFolder}\\src\\*.ppu' -Force -ErrorAction SilentlyContinue; Write-Host 'Arquivos compilados removidos!' -ForegroundColor Green"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

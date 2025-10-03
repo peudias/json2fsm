@@ -1,0 +1,56 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "▶️ Pascal: Compilar e Executar",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "powershell.exe",
+      "runtimeArgs": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "& '${workspaceFolder}\\.vscode\\build_pascal.ps1'; if ($LASTEXITCODE -eq 0) { & '${workspaceFolder}\\bin\\hello.exe' }"
+      ],
+      "console": "integratedTerminal",
+      "preLaunchTask": "Pascal: Compilar hello.pas",
+      "presentation": {
+        "hidden": false,
+        "group": "Pascal",
+        "order": 1
+      }
+    },
+    {
+      "name": "▶️ Pascal: Apenas Executar",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceFolder}\\bin\\hello.exe",
+      "console": "integratedTerminal",
+      "presentation": {
+        "hidden": false,
+        "group": "Pascal",
+        "order": 2
+      }
+    },
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "cppdbg",
+      "request": "launch",
+      "args": [],
+      "stopAtEntry": false,
+      "externalConsole": true,
+      "cwd": "c:/Users/Henrique/Videos/CEFET/LFA/json2fsm",
+      "program": "c:/Users/Henrique/Videos/CEFET/LFA/json2fsm/build/Debug/outDebug",
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    }
+  ]
+}
