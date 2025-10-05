@@ -1,0 +1,143 @@
+object FormMain: TFormMain
+  Left = 372
+  Height = 600
+  Top = 150
+  Width = 900
+  Caption = 'Conversor AFN → AFD'
+  ClientHeight = 600
+  ClientWidth = 900
+  OnCreate = FormCreate
+  Position = poScreenCenter
+  LCLVersion = '3.2.0.0'
+  object Panel1: TPanel
+    Left = 0
+    Height = 200
+    Top = 0
+    Width = 900
+    Align = alTop
+    ClientHeight = 200
+    ClientWidth = 900
+    TabOrder = 0
+    object lblFile: TLabel
+      Left = 12
+      Height = 15
+      Top = 12
+      Width = 42
+      Caption = 'Arquivo:'
+      ParentColor = False
+    end
+    object lblInput: TLabel
+      Left = 12
+      Height = 15
+      Top = 45
+      Width = 98
+      Caption = 'Entrada do AFN:'
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+    object edtFilePath: TEdit
+      Left = 68
+      Height = 23
+      Top = 8
+      Width = 680
+      ReadOnly = True
+      TabOrder = 0
+      Text = ''
+    end
+    object btnLoadFile: TButton
+      Left = 760
+      Height = 25
+      Top = 8
+      Width = 120
+      Caption = '📂 Carregar Arquivo'
+      TabOrder = 1
+      OnClick = btnLoadFileClick
+    end
+    object memoInput: TMemo
+      Left = 12
+      Height = 120
+      Top = 68
+      Width = 868
+      Lines.Strings = (
+        'a b'
+        'q0 q1 q2'
+        'q0'
+        'q2'
+        'q0 a q0'
+        'q0 b q0'
+        'q0 a q1'
+        'q1 b q2'
+      )
+      ScrollBars = ssAutoBoth
+      TabOrder = 2
+    end
+  end
+  object Splitter1: TSplitter
+    Cursor = crVSplit
+    Left = 0
+    Height = 5
+    Top = 200
+    Width = 900
+    Align = alTop
+    ResizeAnchor = akTop
+  end
+  object Panel2: TPanel
+    Left = 0
+    Height = 395
+    Top = 205
+    Width = 900
+    Align = alClient
+    ClientHeight = 395
+    ClientWidth = 900
+    TabOrder = 2
+    object lblOutput: TLabel
+      Left = 12
+      Height = 15
+      Top = 8
+      Width = 104
+      Caption = 'Resultado do AFD:'
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+    object memoOutput: TMemo
+      Left = 12
+      Height = 304
+      Top = 32
+      Width = 868
+      Font.Name = 'Courier New'
+      Lines.Strings = (
+        'Clique em "Converter" para gerar o AFD...'
+      )
+      ParentFont = False
+      ReadOnly = True
+      ScrollBars = ssAutoBoth
+      TabOrder = 0
+    end
+    object btnConvert: TButton
+      Left = 12
+      Height = 35
+      Top = 345
+      Width = 200
+      Caption = '🔄 Converter AFN → AFD'
+      Font.Style = [fsBold]
+      ParentFont = False
+      TabOrder = 1
+      OnClick = btnConvertClick
+    end
+    object btnClear: TButton
+      Left = 220
+      Height = 35
+      Top = 345
+      Width = 120
+      Caption = '🗑️ Limpar'
+      TabOrder = 2
+      OnClick = btnClearClick
+    end
+  end
+  object OpenDialog: TOpenDialog
+    Left = 800
+    Top = 100
+  end
+end

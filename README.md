@@ -1,6 +1,11 @@
-# json2fsm — Pascal com Free Pascal Local (Windows)
+# json2fsm — Conversor AFN → AFD em Pascal
 
-Este repositório contém um exemplo de projeto Pascal configurado para compilar e executar usando o **Free Pascal Compiler (FPC)** instalado localmente, com tasks pré-configuradas para o VS Code.
+Este repositório contém um conversor de Autômato Finito Não-determinístico (AFN) para Autômato Finito Determinístico (AFD) implementado em Pascal, com duas versões:
+
+- **Console (`afn2afd.exe`)**: Versão linha de comando
+- **GUI (`afn2afdgui.exe`)**: Interface gráfica usando Lazarus LCL
+
+Configurado para compilar e executar usando o **Free Pascal Compiler (FPC)** instalado localmente, com tasks pré-configuradas para o VS Code.
 
 ---
 
@@ -20,54 +25,84 @@ Basta abrir o projeto no VS Code e usar as tasks configuradas!
 
 ---
 
-## 🚀 Como usar (3 formas)
+## 🚀 Como usar
 
-### 1️⃣ **Menu Visual de Tasks** (Recomendado! 🎯)
+### 🖥️ **Versão Console (afn2afd.exe)**
 
-Aperte **`Ctrl+Shift+B`** e escolha no menu:
-
-```
-┌─────────────────────────────────────────────────┐
-│ Select the build task to run                  │
-├─────────────────────────────────────────────────┤
-│ > 🔨 Pascal: Compilar                          │
-│   ▶️ Pascal: Executar                          │
-│   🚀 Pascal: Compilar e Executar               │
-│   🧹 Pascal: Limpar arquivos compilados        │
-└─────────────────────────────────────────────────┘
-```
-
-**O que cada opção faz:**
-
-| Opção | Descrição |
-|-------|-----------|
-| 🔨 **Pascal: Compilar** | Compila `src/hello.pas` → `bin/hello.exe` |
-| ▶️ **Pascal: Executar** | Executa `bin/hello.exe` (sem compilar) |
-| 🚀 **Pascal: Compilar e Executar** | Compila e executa automaticamente |
-| 🧹 **Pascal: Limpar** | Remove arquivos `.exe`, `.o`, `.ppu` gerados |
-
-### 2️⃣ **Atalhos de Teclado** (Mais rápido! ⚡)
-
-| Atalho | Ação |
-|--------|------|
-| **`Ctrl+Shift+B`** | Abre menu de tasks |
-| **`F5`** | Compila e Executa direto |
-| **`Ctrl+Alt+R`** | Compila e Executa (alternativo) |
-
-### 3️⃣ **Via PowerShell** (Manual)
+#### Via Linha de Comando:
 
 ```powershell
-# Compilar
-& .\pascalwindows\bin\i386-win32\fpc.exe .\src\hello.pas
+# Usar arquivo de exemplo (padrão)
+.\bin\afn2afd.exe
 
-# Executar
-.\src\hello.exe
+# Usar arquivo específico
+.\bin\afn2afd.exe caminho\para\arquivo.txt
 
-# Ou usar o script de build (cria bin/ e move o executável)
-powershell -NoProfile -ExecutionPolicy Bypass -File .\.vscode\build_pascal.ps1
+# Entrada interativa (se arquivo não encontrado)
+.\bin\afn2afd.exe
+```
 
-# Depois executar
-.\bin\hello.exe
+#### Formato do arquivo de entrada:
+
+```
+a b                  # Linha 1: Alfabeto (símbolos separados por espaço)
+q0 q1 q2            # Linha 2: Estados (nomes separados por espaço)
+q0                  # Linha 3: Estados iniciais
+q2                  # Linha 4: Estados finais
+q0 a q0             # Linhas seguintes: Transições (estado símbolo estado)
+q0 b q0
+q0 a q1
+q1 b q2
+```
+
+### 🎨 **Versão GUI (afn2afdgui.exe)**
+
+1. **Abrir o projeto no Lazarus:**
+   ```powershell
+   # Se tiver Lazarus instalado
+   lazarus src\afn2afdgui.lpi
+   ```
+
+2. **Ou compilar via linha de comando:**
+   ```powershell
+   # Compilar versão Release
+   lazbuild --build-mode=Release src\afn2afdgui.lpi
+   
+   # Executar
+   .\bin\afn2afdgui.exe
+   ```
+
+3. **Interface:**
+   - 📂 Carregar arquivo AFN via botão "Carregar Arquivo"
+   - ✏️ Editar entrada manualmente na caixa de texto superior
+   - 🔄 Clicar em "Converter AFN → AFD"
+   - ✅ Ver resultado formatado na caixa inferior
+
+---
+
+## 📋 Compilação Manual
+
+### Console (Free Pascal puro):
+
+```powershell
+# Compilar afn2afd (console)
+& .\pascalwindows\bin\i386-win32\fpc.exe `
+  -Fu".\pascalwindows\units\i386-win32" `
+  -Fu".\pascalwindows\units\i386-win32\rtl" `
+  -Fu".\pascalwindows\units\i386-win32\rtl-console" `
+  .\src\afn2afd.pas
+
+# Copiar para bin/
+Copy-Item .\src\afn2afd.exe .\bin\afn2afd.exe -Force
+```
+
+### GUI (requer Lazarus):
+
+```powershell
+# Compilar via lazbuild
+lazbuild --build-mode=Release src\afn2afdgui.lpi
+
+# Ou abrir no Lazarus IDE e pressionar F9
 ```
 
 ---
@@ -77,19 +112,22 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\.vscode\build_pascal.ps1
 ```
 json2fsm/
 ├── src/
-│   └── hello.pas              # Código fonte Pascal
-├── bin/                       # Executáveis compilados (gerado automaticamente)
-│   └── hello.exe
+│   ├── hello.pas              # Exemplo "Hello World"
+│   ├── afn2afd.pas           # Conversor AFN→AFD (console)
+│   ├── afn2afdgui.lpr        # Projeto Lazarus (GUI)
+│   ├── MainForm.pas          # Unit do formulário principal
+│   ├── MainForm.lfm          # Layout do formulário
+│   └── sample_afn.txt        # Arquivo de exemplo AFN
+├── bin/                       # Executáveis compilados
+│   ├── afn2afd.exe           # Versão console
+│   └── afn2afdgui.exe        # Versão GUI (após compilar)
 ├── pascalwindows/             # Free Pascal Compiler (INCLUÍDO)
-│   └── bin/
-│       └── i386-win32/
-│           └── fpc.exe        # Compilador
+│   └── bin/i386-win32/
+│       └── fpc.exe
 ├── .vscode/
-│   ├── tasks.json             # Tasks pré-configuradas
-│   ├── launch.json            # Configuração de debug/run
-│   ├── build_pascal.ps1       # Script de build
-│   └── settings.json          # Configurações do workspace
-└── README.md                  # Este arquivo
+│   ├── tasks.json            # Tasks do VS Code
+│   └── build_pascal.ps1      # Script de build
+└── README.md
 ```
 
 ---
@@ -178,3 +216,29 @@ Verifique se a pasta `pascalwindows/bin/i386-win32/fpc.exe` existe. Se não, voc
 ## 🎉 Pronto para usar!
 
 Aperte **`Ctrl+Shift+B`** → escolha **🚀 Compilar e Executar** → veja a mágica acontecer! ✨
+
+---
+
+## Novo: AFN → AFD (ferramenta simples)
+
+Adicionei um programa de exemplo `src/afn2afd.pas` que implementa uma construção por subconjuntos (sem suporte a epsilons por enquanto).
+
+Como usar o exemplo interativo:
+
+1. Compile o programa (usando as mesmas tasks):
+
+```powershell
+# compila o afn2afd
+& .\pascalwindows\bin\i386-win32\fpc.exe .\src\afn2afd.pas
+```
+
+2. Rode o executável `src\afn2afd.exe` (ou mova para `bin` se preferir) e siga as instruções que pedem:
+   - linha do alfabeto (símbolos separados por espaço),
+   - linha de estados,
+   - linha de estados iniciais,
+   - linha de estados finais,
+   - transições no formato: <from> <symbol> <to>, uma por linha, terminar com linha vazia.
+
+3. Também incluí um `src/sample_afn.txt` com um pequeno exemplo (alfabeto: a b, estados: q0 q1 q2, iniciais: q0, finais: q2).
+
+Observação: o código é um esqueleto didático — podemos estender para suportar epsilon-transições, minimização do AFD e leitura/parsers de arquivos.
