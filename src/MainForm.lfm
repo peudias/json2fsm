@@ -2,21 +2,21 @@ object FormMain: TFormMain
   Left = 372
   Height = 600
   Top = 150
-  Width = 900
+  Width = 1200
   Caption = 'Conversor AFN → AFD'
   ClientHeight = 600
-  ClientWidth = 900
+  ClientWidth = 1200
   OnCreate = FormCreate
   Position = poScreenCenter
   LCLVersion = '3.2.0.0'
   object Panel1: TPanel
     Left = 0
-    Height = 200
+    Height = 600
     Top = 0
-    Width = 900
-    Align = alTop
-    ClientHeight = 200
-    ClientWidth = 900
+    Width = 550
+    Align = alLeft
+    ClientHeight = 600
+    ClientWidth = 550
     TabOrder = 0
     object lblFile: TLabel
       Left = 12
@@ -36,29 +36,39 @@ object FormMain: TFormMain
       ParentColor = False
       ParentFont = False
     end
+    object lblOutput: TLabel
+      Left = 12
+      Height = 15
+      Top = 300
+      Width = 104
+      Caption = 'Resultado do AFD:'
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
     object edtFilePath: TEdit
       Left = 68
       Height = 23
       Top = 8
-      Width = 680
+      Width = 390
       ReadOnly = True
       TabOrder = 0
       Text = ''
     end
     object btnLoadFile: TButton
-      Left = 760
+      Left = 470
       Height = 25
       Top = 8
-      Width = 120
-      Caption = '📂 Carregar Arquivo'
+      Width = 70
+      Caption = '📂 Abrir'
       TabOrder = 1
       OnClick = btnLoadFileClick
     end
     object memoInput: TMemo
       Left = 12
-      Height = 120
+      Height = 180
       Top = 68
-      Width = 868
+      Width = 528
       Lines.Strings = (
         'a b'
         'q0 q1 q2'
@@ -72,40 +82,41 @@ object FormMain: TFormMain
       ScrollBars = ssAutoBoth
       TabOrder = 2
     end
-  end
-  object Splitter1: TSplitter
-    Cursor = crVSplit
-    Left = 0
-    Height = 5
-    Top = 200
-    Width = 900
-    Align = alTop
-    ResizeAnchor = akTop
-  end
-  object Panel2: TPanel
-    Left = 0
-    Height = 395
-    Top = 205
-    Width = 900
-    Align = alClient
-    ClientHeight = 395
-    ClientWidth = 900
-    TabOrder = 2
-    object lblOutput: TLabel
-      Left = 12
-      Height = 15
-      Top = 8
-      Width = 104
-      Caption = 'Resultado do AFD:'
-      Font.Style = [fsBold]
-      ParentColor = False
-      ParentFont = False
+    object Panel3: TPanel
+      Left = 1
+      Height = 45
+      Top = 254
+      Width = 548
+      Align = alNone
+      ClientHeight = 45
+      ClientWidth = 548
+      TabOrder = 3
+      object btnConvert: TButton
+        Left = 12
+        Height = 35
+        Top = 5
+        Width = 180
+        Caption = '🔄 Converter AFN → AFD'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnConvertClick
+      end
+      object btnClear: TButton
+        Left = 200
+        Height = 35
+        Top = 5
+        Width = 100
+        Caption = '🗑️ Limpar'
+        TabOrder = 1
+        OnClick = btnClearClick
+      end
     end
     object memoOutput: TMemo
       Left = 12
-      Height = 304
-      Top = 32
-      Width = 868
+      Height = 270
+      Top = 320
+      Width = 528
       Font.Name = 'Courier New'
       Lines.Strings = (
         'Clique em "Converter" para gerar o AFD...'
@@ -113,31 +124,56 @@ object FormMain: TFormMain
       ParentFont = False
       ReadOnly = True
       ScrollBars = ssAutoBoth
-      TabOrder = 0
+      TabOrder = 4
     end
-    object btnConvert: TButton
-      Left = 12
-      Height = 35
-      Top = 345
-      Width = 200
-      Caption = '🔄 Converter AFN → AFD'
-      Font.Style = [fsBold]
-      ParentFont = False
-      TabOrder = 1
-      OnClick = btnConvertClick
+  end
+  object Splitter1: TSplitter
+    Cursor = crHSplit
+    Left = 550
+    Height = 600
+    Top = 0
+    Width = 5
+    Align = alLeft
+    ResizeAnchor = akLeft
+  end
+  object PageControl1: TPageControl
+    Left = 555
+    Height = 600
+    Top = 0
+    Width = 645
+    ActivePage = TabNFA
+    Align = alClient
+    TabIndex = 0
+    TabOrder = 2
+    object TabNFA: TTabSheet
+      Caption = '📊 Diagrama AFN'
+      ClientHeight = 572
+      ClientWidth = 637
+      object PaintBoxNFA: TPaintBox
+        Left = 0
+        Height = 572
+        Top = 0
+        Width = 637
+        Align = alClient
+        OnPaint = PaintBoxNFAPaint
+      end
     end
-    object btnClear: TButton
-      Left = 220
-      Height = 35
-      Top = 345
-      Width = 120
-      Caption = '🗑️ Limpar'
-      TabOrder = 2
-      OnClick = btnClearClick
+    object TabDFA: TTabSheet
+      Caption = '📊 Diagrama AFD'
+      ClientHeight = 572
+      ClientWidth = 637
+      object PaintBoxDFA: TPaintBox
+        Left = 0
+        Height = 572
+        Top = 0
+        Width = 637
+        Align = alClient
+        OnPaint = PaintBoxDFAPaint
+      end
     end
   end
   object OpenDialog: TOpenDialog
-    Left = 800
+    Left = 500
     Top = 100
   end
 end

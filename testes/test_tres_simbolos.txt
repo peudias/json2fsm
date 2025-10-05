@@ -1,0 +1,13 @@
+a b c
+x y z
+x
+z
+x a x
+x a y
+x b x
+y b y
+y b z
+y c x
+z a z
+z b z
+z c z

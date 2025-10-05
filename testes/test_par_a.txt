@@ -1,0 +1,8 @@
+a b
+par impar
+par
+par
+par a impar
+par b par
+impar a par
+impar b impar
