@@ -11,6 +11,18 @@ Este repositório contém um conversor de Autômato Finito Não-determinístico 
 
 Configurado para compilar e executar usando o **Lazarus IDE**, com tasks pré-configuradas para o VS Code.
 
+## 📚 Documentação Completa
+
+🌐 **[Acesse a documentação interativa](https://peudias.github.io/json2fsm/)** com:
+- 📦 Guia de instalação passo a passo
+- 🎮 Tutorial completo da interface
+- 🧪 Descrição detalhada dos 9 casos de teste
+- 🔬 Explicação do algoritmo de conversão
+- 💻 Referência da API do código
+- ❓ FAQ e Troubleshooting
+
+> 💡 Ou navegue localmente: abra `docs/index.html` no navegador
+
 ---
 
 ## ✨ Recursos da Interface GUI
