@@ -17,9 +17,31 @@
       --theme-color-dark: #2c8c63;
     }
     
+    /* Logo e nome do app customizados */
+    .app-name {
+      display: flex !important;
+      align-items: center;
+      padding: 20px 0;
+      font-size: 0 !important; /* Esconder texto padrão */
+      justify-content: center;
+    }
+    
+    .app-name::after {
+      content: "json2fsm";
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--theme-color);
+      letter-spacing: -0.5px;
+    }
+    
+    .app-name-link {
+      display: flex;
+      align-items: center;
+    }
+    
     .app-name-link img {
-      width: 40px;
-      margin-right: 10px;
+      width: 100px;
+      margin-right: 15px;
     }
     
     .sidebar-toggle {
@@ -92,7 +114,7 @@
       },
       
       // Logo no canto superior esquerdo
-      logo: '/_media/icon.svg',
+      logo: 'icon.png',
       
       // Footer
       plugins: [
