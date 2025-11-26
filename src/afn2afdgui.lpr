@@ -14,6 +14,7 @@ uses
   { you can add units after this };
 
 {$R *.res}
+{$R appicon.res}
 
 begin
   RequireDerivedFormResource:=True;
