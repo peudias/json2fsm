@@ -332,16 +332,16 @@ var
   var
     nStates, nSym: Integer;
     dest: array of array of Integer;
-    classId: array of Integer;
-    maxClass: Integer;
-    changed, distinguish: Boolean;
-    sIdx, i2, j2: Integer;
-    c1, c2: Integer;
-    cls: Integer;
-    classToNew: array of Integer;
-    fromIdx, toIdx: Integer;
+    isFinalArr: array of Boolean;
+    marked: array of array of Boolean;
+    i2, j2, s, t: Integer;
+    changed: Boolean;
+    p, q: Integer;
+    rep: array of Integer;
+    repToNew: array of Integer;
+    classHasFinal: array of Boolean;
+    fromIdx, toIdx, newFrom, newTo: Integer;
     fromName, toName, symName: string;
-    t: Integer;
     exists: Boolean;
 
     function IsFinalState(idx: Integer): Boolean;
@@ -349,15 +349,56 @@ var
       Result := OrigFinals.IndexOf(OrigStates[idx]) >= 0;
     end;
 
+    procedure MarkPair(a, b: Integer);
+    var
+      x, y: Integer;
+    begin
+      if a = b then Exit;
+      if a > b then
+      begin
+        x := b;
+        y := a;
+      end
+      else
+      begin
+        x := a;
+        y := b;
+      end;
+      if not marked[x][y] then
+      begin
+        marked[x][y] := True;
+        changed := True;
+      end;
+    end;
+
+    function IsMarked(a, b: Integer): Boolean;
+    var
+      x, y: Integer;
+    begin
+      if a = b then Exit(False);
+      if a > b then
+      begin
+        x := b;
+        y := a;
+      end
+      else
+      begin
+        x := a;
+        y := b;
+      end;
+      Result := marked[x][y];
+    end;
+
   begin
-    MinStates  := TStringList.Create;
-    MinFinals  := TStringList.Create;
+    MinStates := TStringList.Create;
+    MinFinals := TStringList.Create;
     SetLength(MinTrans, 0);
 
     nStates := OrigStates.Count;
     nSym    := Alphabet.Count;
     if (nStates = 0) or (nSym = 0) then Exit;
 
+    // matriz delta
     SetLength(dest, nStates, nSym);
     for i2 := 0 to nStates - 1 do
       for j2 := 0 to nSym - 1 do
@@ -367,103 +408,130 @@ var
     begin
       i2 := OrigStates.IndexOf(OrigTrans[t].FromState);
       j2 := Alphabet.IndexOf(OrigTrans[t].Symbol);
-      sIdx := OrigStates.IndexOf(OrigTrans[t].ToState);
-      if (i2 >= 0) and (j2 >= 0) and (sIdx >= 0) then
-        dest[i2, j2] := sIdx;
+      q  := OrigStates.IndexOf(OrigTrans[t].ToState);
+      if (i2 >= 0) and (j2 >= 0) and (q >= 0) then
+        dest[i2, j2] := q;
     end;
 
-    SetLength(classId, nStates);
-    maxClass := 1;
+    // finais
+    SetLength(isFinalArr, nStates);
     for i2 := 0 to nStates - 1 do
-      if IsFinalState(i2) then classId[i2] := 1 else classId[i2] := 0;
+      isFinalArr[i2] := IsFinalState(i2);
 
+    // tabela de pares
+    SetLength(marked, nStates, nStates);
+    for i2 := 0 to nStates - 1 do
+      for j2 := 0 to nStates - 1 do
+        marked[i2][j2] := False;
+
+    // finais x não-finais = diferentes
+    for i2 := 0 to nStates - 1 do
+      for j2 := i2 + 1 to nStates - 1 do
+        if isFinalArr[i2] <> isFinalArr[j2] then
+          marked[i2][j2] := True;
+
+    // refinamento
     repeat
       changed := False;
       for i2 := 0 to nStates - 1 do
         for j2 := i2 + 1 to nStates - 1 do
-          if classId[i2] = classId[j2] then
+          if not marked[i2][j2] then
           begin
-            distinguish := False;
-            for sIdx := 0 to nSym - 1 do
+            for s := 0 to nSym - 1 do
             begin
-              if dest[i2, sIdx] >= 0 then
-                c1 := classId[dest[i2, sIdx]] else c1 := -1;
-              if dest[j2, sIdx] >= 0 then
-                c2 := classId[dest[j2, sIdx]] else c2 := -1;
-              if c1 <> c2 then
+              p := dest[i2, s];
+              q := dest[j2, s];
+
+              if (p = -1) xor (q = -1) then
               begin
-                distinguish := True;
+                MarkPair(i2, j2);
                 Break;
               end;
-            end;
-            if distinguish then
-            begin
-              Inc(maxClass);
-              classId[j2] := maxClass;
-              changed := True;
+
+              if (p >= 0) and (q >= 0) and IsMarked(p, q) then
+              begin
+                MarkPair(i2, j2);
+                Break;
+              end;
             end;
           end;
     until not changed;
 
-    SetLength(classToNew, maxClass + 1);
-    for cls := 0 to maxClass do
-      classToNew[cls] := -1;
+    // classes de equivalência
+    SetLength(rep, nStates);
+    for i2 := 0 to nStates - 1 do
+      rep[i2] := i2;
 
     for i2 := 0 to nStates - 1 do
-    begin
-      cls := classId[i2];
-      if classToNew[cls] = -1 then
+      for j2 := i2 + 1 to nStates - 1 do
+        if not marked[i2][j2] then
+          rep[j2] := rep[i2];
+
+    for i2 := 0 to nStates - 1 do
+      while rep[i2] <> rep[rep[i2]] do
+        rep[i2] := rep[rep[i2]];
+
+    SetLength(repToNew, nStates);
+    for i2 := 0 to nStates - 1 do
+      repToNew[i2] := -1;
+
+    SetLength(classHasFinal, nStates);
+    for i2 := 0 to nStates - 1 do
+      classHasFinal[i2] := False;
+    for i2 := 0 to nStates - 1 do
+      if isFinalArr[i2] then
+        classHasFinal[rep[i2]] := True;
+
+    // cria estados minimizados
+    for i2 := 0 to nStates - 1 do
+      if rep[i2] = i2 then
       begin
-        classToNew[cls] := MinStates.Count;
+        repToNew[i2] := MinStates.Count;
         MinStates.Add(OrigStates[i2]);
       end;
-    end;
 
-    // Estados finais minimizados
+    // finais minimizados
     for i2 := 0 to nStates - 1 do
-      if IsFinalState(i2) then
-      begin
-        cls := classId[i2];
-        fromIdx := classToNew[cls];
-        if (fromIdx >= 0) and (MinFinals.IndexOf(MinStates[fromIdx]) < 0) then
-          MinFinals.Add(MinStates[fromIdx]);
-      end;
+      if (rep[i2] = i2) and classHasFinal[i2] then
+        MinFinals.Add(OrigStates[i2]);
 
-    // Transições do AFD minimizado (evita duplicadas)
-    for i2 := 0 to nStates - 1 do
-      for sIdx := 0 to nSym - 1 do
-      begin
-        j2 := dest[i2, sIdx];
-        if j2 < 0 then Continue;
+    // transições minimizadas
+    for t := 0 to High(OrigTrans) do
+    begin
+      fromIdx := OrigStates.IndexOf(OrigTrans[t].FromState);
+      toIdx   := OrigStates.IndexOf(OrigTrans[t].ToState);
+      if (fromIdx < 0) or (toIdx < 0) then
+        Continue;
 
-        fromIdx := classToNew[classId[i2]];
-        toIdx   := classToNew[classId[j2]];
-        if (fromIdx < 0) or (toIdx < 0) then Continue;
+      fromIdx := rep[fromIdx];
+      toIdx   := rep[toIdx];
+      newFrom := repToNew[fromIdx];
+      newTo   := repToNew[toIdx];
+      if (newFrom < 0) or (newTo < 0) then
+        Continue;
 
-        fromName := MinStates[fromIdx];
-        toName   := MinStates[toIdx];
-        symName  := Alphabet[sIdx];
+      fromName := MinStates[newFrom];
+      toName   := MinStates[newTo];
+      symName  := OrigTrans[t].Symbol;
 
-        // checar duplicata
-        exists := False;
-        for t := 0 to High(MinTrans) do
-          if (MinTrans[t].FromState = fromName) and
-             (MinTrans[t].Symbol   = symName)  and
-             (MinTrans[t].ToState  = toName) then
-          begin
-            exists := True;
-            Break;
-          end;
-
-        if not exists then
+      exists := False;
+      for i2 := 0 to High(MinTrans) do
+        if (MinTrans[i2].FromState = fromName) and
+           (MinTrans[i2].Symbol    = symName)  and
+           (MinTrans[i2].ToState   = toName) then
         begin
-          SetLength(MinTrans, Length(MinTrans) + 1);
-          MinTrans[High(MinTrans)].FromState := fromName;
-          MinTrans[High(MinTrans)].Symbol    := symName;
-          MinTrans[High(MinTrans)].ToState   := toName;
+          exists := True;
+          Break;
         end;
-      end;
 
+      if not exists then
+      begin
+        SetLength(MinTrans, Length(MinTrans) + 1);
+        MinTrans[High(MinTrans)].FromState := fromName;
+        MinTrans[High(MinTrans)].Symbol    := symName;
+        MinTrans[High(MinTrans)].ToState   := toName;
+      end;
+    end;
   end;
 
 begin
