@@ -34,14 +34,17 @@ type
     PageControl1: TPageControl;
     TabNFA: TTabSheet;
     TabDFA: TTabSheet;
+    TabDFAMin: TTabSheet;
     PaintBoxNFA: TPaintBox;
     PaintBoxDFA: TPaintBox;
+    PaintBoxDFAMin: TPaintBox;
     procedure btnClearClick(Sender: TObject);
     procedure btnConvertClick(Sender: TObject);
     procedure btnLoadFileClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure PaintBoxNFAPaint(Sender: TObject);
     procedure PaintBoxDFAPaint(Sender: TObject);
+    procedure PaintBoxDFAMinPaint(Sender: TObject);
   private
     // Dados do AFN
     NFAAlphabet, NFAStates, NFAInitials, NFAFinals: TStringList;
@@ -50,6 +53,9 @@ type
     DFAStates: TStringList;
     DFATransitions: TTransitionArray;
     DFAFinals: TStringList;
+    DFAStatesMin: TStringList;
+    DFATransitionsMin: TTransitionArray;
+    DFAFinalsMin: TStringList;
     
     procedure ConvertAFNtoAFD;
     procedure LoadSampleFile;
@@ -216,12 +222,16 @@ begin
   if Assigned(NFAFinals) then NFAFinals.Clear;
   if Assigned(DFAStates) then DFAStates.Clear;
   if Assigned(DFAFinals) then DFAFinals.Clear;
+  if Assigned(DFAStatesMin) then DFAStatesMin.Clear;
+  if Assigned(DFAFinalsMin) then DFAFinalsMin.Clear;
   SetLength(NFATransitions, 0);
   SetLength(DFATransitions, 0);
+  SetLength(DFATransitionsMin, 0);
   
   // Redesenhar os painéis vazios
   if Assigned(PaintBoxNFA) then PaintBoxNFA.Invalidate;
   if Assigned(PaintBoxDFA) then PaintBoxDFA.Invalidate;
+  if Assigned(PaintBoxDFAMin) then PaintBoxDFAMin.Invalidate;
 end;
 
 procedure TFormMain.btnConvertClick(Sender: TObject);
@@ -313,6 +323,149 @@ var
   localDFATransitions: TTransitionArray;
   hasFinal: Boolean;
   line: string;
+
+  procedure MinimizeDFA(const Alphabet: TStringList;
+                        const OrigStates, OrigFinals: TStringList;
+                        const OrigTrans: TTransitionArray;
+                        out MinStates, MinFinals: TStringList;
+                        out MinTrans: TTransitionArray);
+  var
+    nStates, nSym: Integer;
+    dest: array of array of Integer;
+    classId: array of Integer;
+    maxClass: Integer;
+    changed, distinguish: Boolean;
+    sIdx, i2, j2: Integer;
+    c1, c2: Integer;
+    cls: Integer;
+    classToNew: array of Integer;
+    fromIdx, toIdx: Integer;
+    fromName, toName, symName: string;
+    t: Integer;
+    exists: Boolean;
+
+    function IsFinalState(idx: Integer): Boolean;
+    begin
+      Result := OrigFinals.IndexOf(OrigStates[idx]) >= 0;
+    end;
+
+  begin
+    MinStates  := TStringList.Create;
+    MinFinals  := TStringList.Create;
+    SetLength(MinTrans, 0);
+
+    nStates := OrigStates.Count;
+    nSym    := Alphabet.Count;
+    if (nStates = 0) or (nSym = 0) then Exit;
+
+    SetLength(dest, nStates, nSym);
+    for i2 := 0 to nStates - 1 do
+      for j2 := 0 to nSym - 1 do
+        dest[i2, j2] := -1;
+
+    for t := 0 to High(OrigTrans) do
+    begin
+      i2 := OrigStates.IndexOf(OrigTrans[t].FromState);
+      j2 := Alphabet.IndexOf(OrigTrans[t].Symbol);
+      sIdx := OrigStates.IndexOf(OrigTrans[t].ToState);
+      if (i2 >= 0) and (j2 >= 0) and (sIdx >= 0) then
+        dest[i2, j2] := sIdx;
+    end;
+
+    SetLength(classId, nStates);
+    maxClass := 1;
+    for i2 := 0 to nStates - 1 do
+      if IsFinalState(i2) then classId[i2] := 1 else classId[i2] := 0;
+
+    repeat
+      changed := False;
+      for i2 := 0 to nStates - 1 do
+        for j2 := i2 + 1 to nStates - 1 do
+          if classId[i2] = classId[j2] then
+          begin
+            distinguish := False;
+            for sIdx := 0 to nSym - 1 do
+            begin
+              if dest[i2, sIdx] >= 0 then
+                c1 := classId[dest[i2, sIdx]] else c1 := -1;
+              if dest[j2, sIdx] >= 0 then
+                c2 := classId[dest[j2, sIdx]] else c2 := -1;
+              if c1 <> c2 then
+              begin
+                distinguish := True;
+                Break;
+              end;
+            end;
+            if distinguish then
+            begin
+              Inc(maxClass);
+              classId[j2] := maxClass;
+              changed := True;
+            end;
+          end;
+    until not changed;
+
+    SetLength(classToNew, maxClass + 1);
+    for cls := 0 to maxClass do
+      classToNew[cls] := -1;
+
+    for i2 := 0 to nStates - 1 do
+    begin
+      cls := classId[i2];
+      if classToNew[cls] = -1 then
+      begin
+        classToNew[cls] := MinStates.Count;
+        MinStates.Add(OrigStates[i2]);
+      end;
+    end;
+
+    // Estados finais minimizados
+    for i2 := 0 to nStates - 1 do
+      if IsFinalState(i2) then
+      begin
+        cls := classId[i2];
+        fromIdx := classToNew[cls];
+        if (fromIdx >= 0) and (MinFinals.IndexOf(MinStates[fromIdx]) < 0) then
+          MinFinals.Add(MinStates[fromIdx]);
+      end;
+
+    // Transições do AFD minimizado (evita duplicadas)
+    for i2 := 0 to nStates - 1 do
+      for sIdx := 0 to nSym - 1 do
+      begin
+        j2 := dest[i2, sIdx];
+        if j2 < 0 then Continue;
+
+        fromIdx := classToNew[classId[i2]];
+        toIdx   := classToNew[classId[j2]];
+        if (fromIdx < 0) or (toIdx < 0) then Continue;
+
+        fromName := MinStates[fromIdx];
+        toName   := MinStates[toIdx];
+        symName  := Alphabet[sIdx];
+
+        // checar duplicata
+        exists := False;
+        for t := 0 to High(MinTrans) do
+          if (MinTrans[t].FromState = fromName) and
+             (MinTrans[t].Symbol   = symName)  and
+             (MinTrans[t].ToState  = toName) then
+          begin
+            exists := True;
+            Break;
+          end;
+
+        if not exists then
+        begin
+          SetLength(MinTrans, Length(MinTrans) + 1);
+          MinTrans[High(MinTrans)].FromState := fromName;
+          MinTrans[High(MinTrans)].Symbol    := symName;
+          MinTrans[High(MinTrans)].ToState   := toName;
+        end;
+      end;
+
+  end;
+
 begin
   memoOutput.Lines.Clear;
   
@@ -323,6 +476,8 @@ begin
   if Assigned(NFAFinals) then NFAFinals.Free;
   if Assigned(DFAStates) then DFAStates.Free;
   if Assigned(DFAFinals) then DFAFinals.Free;
+  if Assigned(DFAStatesMin) then DFAStatesMin.Free;
+  if Assigned(DFAFinalsMin) then DFAFinalsMin.Free;
   
   NFAAlphabet := TStringList.Create;
   NFAStates := TStringList.Create;
@@ -330,6 +485,8 @@ begin
   NFAFinals := TStringList.Create;
   DFAStates := TStringList.Create;
   DFAFinals := TStringList.Create;
+  DFAStatesMin := nil;
+  DFAFinalsMin := nil;
   
   if memoInput.Lines.Count < 4 then
   begin
@@ -342,10 +499,10 @@ begin
   end;
   
   Alphabet := TStringList.Create;
-  States := TStringList.Create;
+  States   := TStringList.Create;
   Initials := TStringList.Create;
-  Finals := TStringList.Create;
-  parts := TStringList.Create;
+  Finals   := TStringList.Create;
+  parts    := TStringList.Create;
   
   try
     parts.Delimiter := ' ';
@@ -400,12 +557,10 @@ begin
       if parts.Count >= 3 then
       begin
         Transitions[i - tStart].FromState := parts[0];
-        Transitions[i - tStart].Symbol := parts[1];
-        Transitions[i - tStart].ToState := parts[2];
+        Transitions[i - tStart].Symbol    := parts[1];
+        Transitions[i - tStart].ToState   := parts[2];
         
-        NFATransitions[i - tStart].FromState := parts[0];
-        NFATransitions[i - tStart].Symbol := parts[1];
-        NFATransitions[i - tStart].ToState := parts[2];
+        NFATransitions[i - tStart] := Transitions[i - tStart];
       end;
     end;
     
@@ -417,7 +572,7 @@ begin
     isFinal := TStringList.Create;
     
     try
-      // Estado inicial do DFA = ε-closure(conjunto de estados iniciais do AFN)
+      // Estado inicial do DFA = ε-closure(conjunto de iniciais do AFN)
       curSet := TStringSet.Create;
       for i := 0 to Initials.Count - 1 do
         curSet.Add(Initials[i]);
@@ -443,7 +598,8 @@ begin
         hasFinal := False;
         for i := 0 to Finals.Count - 1 do
           if curSet.Contains(Finals[i]) then hasFinal := True;
-        if hasFinal then isFinal.Add(key);
+        if hasFinal and (isFinal.IndexOf(key) < 0) then
+          isFinal.Add(key);
         
         // Transições para cada símbolo do alfabeto
         for i := 0 to Alphabet.Count - 1 do
@@ -465,28 +621,28 @@ begin
               else
                 key := GetSetName(nextSet);
             end;
+
             // Registrar transição
             SetLength(localDFATransitions, Length(localDFATransitions) + 1);
             localDFATransitions[High(localDFATransitions)].FromState := GetSetName(curSet);
-            localDFATransitions[High(localDFATransitions)].Symbol := sym;
-            localDFATransitions[High(localDFATransitions)].ToState := key;
+            localDFATransitions[High(localDFATransitions)].Symbol    := sym;
+            localDFATransitions[High(localDFATransitions)].ToState   := key;
             
             // Também armazenar no campo privado
             SetLength(DFATransitions, Length(DFATransitions) + 1);
-            DFATransitions[High(DFATransitions)].FromState := GetSetName(curSet);
-            DFATransitions[High(DFATransitions)].Symbol := sym;
-            DFATransitions[High(DFATransitions)].ToState := key;
+            DFATransitions[High(DFATransitions)] := localDFATransitions[High(localDFATransitions)];
             
             // Se é novo estado do DFA, adicionar
-            if (dfaMap.IndexOf(key) = -1) and (localDFAStates.IndexOf(key) = -1) then
+            if (localDFAStates.IndexOf(key) = -1) then
             begin
-              if (key <> '{}') and (not nextSet.IsEmpty) then
+              if (key <> '{}') and (key <> '') and (dfaMap.IndexOf(key) = -1) and
+                 (not nextSet.IsEmpty) then
               begin
                 cloneSet := nextSet.Clone;
                 dfaMap.AddObject(key, cloneSet);
               end;
               localDFAStates.Add(key);
-              if key <> '{}' then
+              if (key <> '{}') then
                 workQ.Add(key);
             end;
             
@@ -497,7 +653,7 @@ begin
         end;
       end;
       
-      // Exibir resultado
+      // ---------- Saída do DFA original ----------
       memoOutput.Lines.Add('═══════════════════════════════════════════════════');
       memoOutput.Lines.Add('    RESULTADO DA CONVERSÃO AFN → AFD');
       memoOutput.Lines.Add('═══════════════════════════════════════════════════');
@@ -515,35 +671,79 @@ begin
       memoOutput.Lines.Add('');
       
       if dfaMap.IndexOf(localDFAStates[0]) <> -1 then
-        memoOutput.Lines.Add('▶️  ESTADO INICIAL: ' + GetSetName(TStringSet(dfaMap.Objects[dfaMap.IndexOf(localDFAStates[0])])))
+        memoOutput.Lines.Add('▶️  ESTADO INICIAL: ' +
+          GetSetName(TStringSet(dfaMap.Objects[dfaMap.IndexOf(localDFAStates[0])])))
       else
         memoOutput.Lines.Add('▶️  ESTADO INICIAL: ' + localDFAStates[0]);
       memoOutput.Lines.Add('');
       
       memoOutput.Lines.Add('🎯 ESTADOS FINAIS:');
       if isFinal.Count > 0 then
-      begin
         for i := 0 to isFinal.Count - 1 do
         begin
           memoOutput.Lines.Add('   • ' + isFinal[i]);
           DFAFinals.Add(isFinal[i]);
-        end;
-      end
+        end
       else
         memoOutput.Lines.Add('   (nenhum)');
       memoOutput.Lines.Add('');
       
       memoOutput.Lines.Add('➡️  TRANSIÇÕES:');
       for i := 0 to High(localDFATransitions) do
-        memoOutput.Lines.Add('   ' + localDFATransitions[i].FromState + ' --' + 
-                            localDFATransitions[i].Symbol + '--> ' + 
-                            localDFATransitions[i].ToState);
+        memoOutput.Lines.Add('   ' + localDFATransitions[i].FromState + ' --' +
+                             localDFATransitions[i].Symbol + '--> ' +
+                             localDFATransitions[i].ToState);
+            memoOutput.Lines.Add('');
+      memoOutput.Lines.Add('');
+
+      MinimizeDFA(
+        Alphabet,
+        localDFAStates,
+        isFinal,
+        localDFATransitions,
+        DFAStatesMin,
+        DFAFinalsMin,
+        DFATransitionsMin
+      );
+
+      // Saída do AFD minimizado
+      memoOutput.Lines.Add('═══════════════════════════════════════════════════');
+      memoOutput.Lines.Add('    AFD MINIMIZADO');
+      memoOutput.Lines.Add('═══════════════════════════════════════════════════');
+      memoOutput.Lines.Add('');
       
+      memoOutput.Lines.Add('🔵 ESTADOS DO DFA (minimizado):');
+      for i := 0 to DFAStatesMin.Count - 1 do
+        memoOutput.Lines.Add('   • ' + DFAStatesMin[i]);
+      memoOutput.Lines.Add('');
+
+      if DFAStatesMin.Count > 0 then
+        memoOutput.Lines.Add('▶️  ESTADO INICIAL (minimizado): ' + DFAStatesMin[0])
+      else
+        memoOutput.Lines.Add('▶️  ESTADO INICIAL (minimizado): (nenhum)');
+
+      memoOutput.Lines.Add('');
+      
+      memoOutput.Lines.Add('🎯 ESTADOS FINAIS (minimizado):');
+      if DFAFinalsMin.Count > 0 then
+        for i := 0 to DFAFinalsMin.Count - 1 do
+          memoOutput.Lines.Add('   • ' + DFAFinalsMin[i])
+      else
+        memoOutput.Lines.Add('   (nenhum)');
+
+      memoOutput.Lines.Add('');
+      
+      memoOutput.Lines.Add('➡️  TRANSIÇÕES (minimizado):');
+      for i := 0 to High(DFATransitionsMin) do
+        memoOutput.Lines.Add('   ' + DFATransitionsMin[i].FromState + ' --' +
+                             DFATransitionsMin[i].Symbol + '--> ' +
+                             DFATransitionsMin[i].ToState);
+
       memoOutput.Lines.Add('');
       memoOutput.Lines.Add('═══════════════════════════════════════════════════');
       memoOutput.Lines.Add('✅ Conversão concluída com sucesso!');
       
-      // Redesenhar os diagramas
+      // Redesenhar os diagramas (usando o AFD minimizado)
       if Assigned(PaintBoxNFA) then PaintBoxNFA.Invalidate;
       if Assigned(PaintBoxDFA) then PaintBoxDFA.Invalidate;
       
@@ -581,7 +781,30 @@ begin
     if DFAStates.Count > 0 then
       Initials.Add(DFAStates[0]);
     
-    DrawAutomaton(PaintBoxDFA.Canvas, DFAStates, Initials, DFAFinals, DFATransitions);
+    DrawAutomaton(PaintBoxDFA.Canvas, DFAStates, Initials, DFAFinals, DFATransitions);              // AFD normal
+    DrawAutomaton(PaintBoxDFAMin.Canvas, DFAStatesMin, Initials, DFAFinalsMin, DFATransitionsMin);  // AFD minimizado
+
+  finally
+    Initials.Free;
+  end;
+end;
+
+procedure TFormMain.PaintBoxDFAMinPaint(Sender: TObject);
+var
+  Initials: TStringList;
+begin
+  if not Assigned(DFAStatesMin) or (DFAStatesMin.Count = 0) then Exit;
+
+  Initials := TStringList.Create;
+  try
+    if DFAStatesMin.Count > 0 then
+      Initials.Add(DFAStatesMin[0]);
+
+    DrawAutomaton(PaintBoxDFAMin.Canvas,
+                  DFAStatesMin,
+                  Initials,
+                  DFAFinalsMin,
+                  DFATransitionsMin);
   finally
     Initials.Free;
   end;

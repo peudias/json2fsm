@@ -171,6 +171,20 @@ object FormMain: TFormMain
         OnPaint = PaintBoxDFAPaint
       end
     end
+      object TabDFAMin: TTabSheet
+        Caption = '📊 Diagrama AFD (Minimização)'
+        ClientHeight = 572
+        ClientWidth = 637
+            object PaintBoxDFAMin: TPaintBox
+                Left = 0
+                Top = 0
+                Width = 637
+                Height = 572
+                Align = alClient
+                OnPaint = PaintBoxDFAMinPaint
+            end
+        end
+
   end
   object OpenDialog: TOpenDialog
     Left = 500
