@@ -242,6 +242,64 @@ begin
   Result := setObj.ToString;
 end;
 
+function IsEpsilonSymbol(const s: string): Boolean;
+begin
+  Result :=
+    (s = 'ε') or
+    (LowerCase(s) = 'eps') or
+    (LowerCase(s) = 'epsilon');
+end;
+
+procedure EpsilonClosure(const Transitions: array of TTransition; Source, Dest: TStringSet);
+var
+  stack: TStringList;
+  i, k: Integer;
+  st: string;
+begin
+  for i := 0 to Source.Count - 1 do
+    Dest.Add(Source.Item(i));
+
+  stack := TStringList.Create;
+  try
+    for i := 0 to Source.Count - 1 do
+      stack.Add(Source.Item(i));
+
+    while stack.Count > 0 do
+    begin
+      st := stack[stack.Count - 1];
+      stack.Delete(stack.Count - 1);
+
+      for k := 0 to High(Transitions) do
+      begin
+        if (Transitions[k].FromState = st) and IsEpsilonSymbol(Transitions[k].Symbol) then
+        begin
+          if not Dest.Contains(Transitions[k].ToState) then
+          begin
+            Dest.Add(Transitions[k].ToState);
+            stack.Add(Transitions[k].ToState);
+          end;
+        end;
+      end;
+    end;
+  finally
+    stack.Free;
+  end;
+end;
+
+procedure MoveSet(const Transitions: array of TTransition; Source: TStringSet;
+  const Sym: string; Dest: TStringSet);
+var
+  i, k: Integer;
+begin
+  for i := 0 to Source.Count - 1 do
+    for k := 0 to High(Transitions) do
+      if (Transitions[k].FromState = Source.Item(i)) and
+         (Transitions[k].Symbol = Sym) and
+         (not IsEpsilonSymbol(Transitions[k].Symbol)) then
+        Dest.Add(Transitions[k].ToState);
+end;
+
+
 procedure TFormMain.ConvertAFNtoAFD;
 var
   Alphabet, States, Initials, Finals: TStringList;
@@ -250,6 +308,7 @@ var
   i, j, k, tStart: Integer;
   localDFAStates, workQ, dfaMap, isFinal: TStringList;
   curSet, nextSet, cloneSet: TStringSet;
+  moveResult: TStringSet;
   sym, key: string;
   localDFATransitions: TTransitionArray;
   hasFinal: Boolean;
@@ -292,10 +351,10 @@ begin
     parts.Delimiter := ' ';
     parts.StrictDelimiter := True;
     
-    // Linha 0: alfabeto
+    // Linha 0: alfabeto (ignorando epsilon)
     parts.DelimitedText := Trim(memoInput.Lines[0]);
     for i := 0 to parts.Count - 1 do
-      if parts[i] <> '' then 
+      if (parts[i] <> '') and (not IsEpsilonSymbol(parts[i])) then
       begin
         Alphabet.Add(parts[i]);
         NFAAlphabet.Add(parts[i]);
@@ -358,11 +417,16 @@ begin
     isFinal := TStringList.Create;
     
     try
-      // Estado inicial do DFA = conjunto de estados iniciais do AFN
+      // Estado inicial do DFA = ε-closure(conjunto de estados iniciais do AFN)
       curSet := TStringSet.Create;
       for i := 0 to Initials.Count - 1 do
         curSet.Add(Initials[i]);
       
+      nextSet := TStringSet.Create;
+      EpsilonClosure(Transitions, curSet, nextSet);
+      curSet.Free;
+      curSet := nextSet;
+
       localDFAStates.Add(GetSetName(curSet));
       workQ.Add(GetSetName(curSet));
       dfaMap.AddObject(GetSetName(curSet), curSet);
@@ -385,24 +449,22 @@ begin
         for i := 0 to Alphabet.Count - 1 do
         begin
           sym := Alphabet[i];
+          moveResult := TStringSet.Create;
           nextSet := TStringSet.Create;
           try
-            // União dos moves
-            for j := 0 to curSet.Count - 1 do
-            begin
-              for k := 0 to High(Transitions) do
-              begin
-                if Transitions[k].FromState = curSet.Item(j) then
-                  if Transitions[k].Symbol = sym then
-                    nextSet.Add(Transitions[k].ToState);
-              end;
-            end;
-            
-            if nextSet.IsEmpty then
+            // move(curSet, sym) sem ε
+            MoveSet(Transitions, curSet, sym, moveResult);
+
+            if moveResult.IsEmpty then
               key := '{}'
             else
-              key := GetSetName(nextSet);
-            
+            begin
+              EpsilonClosure(Transitions, moveResult, nextSet);
+              if nextSet.IsEmpty then
+                key := '{}'
+              else
+                key := GetSetName(nextSet);
+            end;
             // Registrar transição
             SetLength(localDFATransitions, Length(localDFATransitions) + 1);
             localDFATransitions[High(localDFATransitions)].FromState := GetSetName(curSet);
@@ -418,7 +480,7 @@ begin
             // Se é novo estado do DFA, adicionar
             if (dfaMap.IndexOf(key) = -1) and (localDFAStates.IndexOf(key) = -1) then
             begin
-              if key <> '{}' then
+              if (key <> '{}') and (not nextSet.IsEmpty) then
               begin
                 cloneSet := nextSet.Clone;
                 dfaMap.AddObject(key, cloneSet);
@@ -429,6 +491,7 @@ begin
             end;
             
           finally
+            moveResult.Free;
             nextSet.Free;
           end;
         end;
