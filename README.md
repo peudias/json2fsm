@@ -1,13 +1,15 @@
-# json2fsm — Conversor AFN → AFD em Pascal com Visualização de Diagramas
+# json2fsm — Conversor AFN-ε → AFN → AFD → MinDFA em Pascal com Visualização de Diagramas
 
-Este repositório contém um conversor de Autômato Finito Não-determinístico (AFN) para Autômato Finito Determinístico (AFD) implementado em Pascal com interface gráfica usando **Lazarus LCL**.
+Este repositório contém um conversor completo de Autômatos Finitos implementado em Pascal com interface gráfica usando **Lazarus LCL**. Suporta a cadeia completa de conversões: **AFN com epsilon-transições (AFN-ε) → AFN → AFD → AFD Minimizado**.
 
 **✨ Principais recursos:**
-- 🎨 Interface gráfica intuitiva
-- 📊 **Visualização gráfica de diagramas** AFN e AFD
+- 🎨 Interface gráfica intuitiva com 4 diagramas
+- 📊 **Visualização gráfica** de AFN-ε, AFN, AFD e MinDFA
+- 🔄 **Remoção de epsilon-transições** (ε, epsilon, e, &)
 - 📁 Carregamento de arquivos de teste
 - 🔄 Conversão automática com algoritmo de construção de subconjuntos
-- 📋 9 casos de teste incluídos
+- 🎯 **Minimização de AFD** usando algoritmo de Myhill-Nerode
+- 📋 11 casos de teste incluídos (incluindo testes com ε-transições)
 
 Configurado para compilar e executar usando o **Lazarus IDE**, com tasks pré-configuradas para o VS Code.
 
@@ -15,9 +17,10 @@ Configurado para compilar e executar usando o **Lazarus IDE**, com tasks pré-co
 
 🌐 **[Acesse a documentação interativa](https://peudias.github.io/json2fsm/)** com:
 - 📦 Guia de instalação passo a passo
-- 🎮 Tutorial completo da interface
-- 🧪 Descrição detalhada dos 9 casos de teste
-- 🔬 Explicação do algoritmo de conversão
+- 🎮 Tutorial completo da interface com 4 abas de diagramas
+- 🧪 Descrição detalhada dos 11 casos de teste
+- 🔬 Explicação dos algoritmos (epsilon-closure, conversão AFN→AFD, minimização)
+- ε Guia completo sobre transições epsilon (epsilon-transicoes.md)
 - 💻 Referência da API do código
 - ❓ FAQ e Troubleshooting
 
@@ -31,34 +34,38 @@ Configurado para compilar e executar usando o **Lazarus IDE**, com tasks pré-co
 A janela é dividida em duas áreas principais (redimensionáveis com splitter vertical):
 
 **🔹 Painel Esquerdo (550px) - Entrada e Resultado:**
-- 📂 **Carregar Arquivo**: Botão para abrir arquivos `.txt` com AFN
-- ✏️ **Editor de Entrada**: Área de texto para editar AFN manualmente
-- 🔄 **Converter**: Botão principal que executa a conversão AFN → AFD
-- 📄 **Resultado Textual**: Exibe DFA formatado com emojis:
-  - 📋 Alfabeto
-  - 🔵 Estados do DFA  
-  - ▶️ Estado inicial
-  - 🎯 Estados finais
-  - ➡️ Transições
-- 🗑️ **Limpar**: Limpa entrada, resultado e diagramas
+- 📂 **Carregar Arquivo**: Botão para abrir arquivos `.txt` (AFN ou AFN-ε)
+- ✏️ **Editor de Entrada**: Área de texto para editar autômato manualmente
+- 🔄 **3 Botões de Conversão** (alinhados horizontalmente):
+  - **Remover Epsilon**: Converte AFN-ε → AFN (remove transições ε, epsilon, e, &)
+  - **Converter AFN→AFD**: Conversão usando construção de subconjuntos
+  - **Minimizar AFD**: Reduz estados equivalentes (algoritmo de Myhill-Nerode)
+- 📄 **3 Abas de Resultado Textual**: AFN sem epsilon, AFD, MinDFA formatados com emojis
 - **Auto-load**: Carrega `sample_afn.txt` automaticamente ao abrir
 
 **🔹 Painel Direito (645px) - Visualização Gráfica:**
-Duas abas com renderização nativa de diagramas:
+Quatro abas com renderização nativa de diagramas:
 
+- **📊 Aba "Diagrama AFN-ε"**: 
+  - Visualização do autômato com epsilon-transições
+  - Transições epsilon aparecem com rótulo "ε"
+  - 🗑️ **Botão Limpar** no topo-direito
+  
 - **📊 Aba "Diagrama AFN"**: 
-  - Visualização gráfica do autômato não-determinístico de entrada
+  - Visualização após remoção de epsilon-transições
   - Estados desenhados como círculos (raio 20px)
-  - Estados finais com círculo duplo e fundo amarelo
-  - Seta de entrada indicando estado(s) inicial(is)
-  - Transições como setas direcionadas com rótulos de símbolos
-  - Self-loops (transições para si mesmo) desenhados como arcos superiores
+  - 🔄 **Botão "Usar como Input"** no canto inferior direito (copia resultado para entrada)
+  - 🗑️ **Botão Limpar** no topo-direito
   
 - **📊 Aba "Diagrama AFD"**: 
-  - Visualização gráfica do autômato determinístico resultante
+  - Visualização do autômato determinístico
   - Estados compostos com notação de conjunto (ex: `{q0,q1}`)
-  - Mesmo estilo visual do AFN para fácil comparação
-  - Atualização automática após cada conversão
+  - 🗑️ **Botão Limpar** no topo-direito
+  
+- **📊 Aba "Diagrama MinDFA"**: 
+  - Visualização do autômato minimizado
+  - Estados equivalentes foram unidos
+  - 🗑️ **Botão Limpar** no topo-direito
 
 ### 🎨 Características Técnicas dos Diagramas:
 - ✅ **Desenho 100% nativo** em Pascal usando TCanvas (sem dependências)
@@ -68,13 +75,16 @@ Duas abas com renderização nativa de diagramas:
 - ✅ **Layout inteligente**: máximo 4 colunas para evitar diagramas muito largos
 - ✅ **Posicionamento**: alinhado ao topo-esquerdo com margens de 60px (esquerda) e 40px (topo)
 - ✅ **Margem esquerda aumentada**: garante que a seta de estado inicial sempre fique visível
+- ✅ **Suporte a epsilon-transições**: Detecta e renderiza ε, epsilon, e, &
 - ✅ Atualização em tempo real ao converter ou limpar
+- ✅ **Botões de limpeza individuais** em cada aba de diagrama
 
 ### 🏆 Vantagens do Layout Dividido:
 - 👁️ Visualização simultânea de entrada, resultado textual E diagramas
-- 🔄 Compare AFN e AFD lado a lado alternando entre abas
+- 🔄 Compare AFN-ε, AFN, AFD e MinDFA alternando entre 4 abas
 - 📏 Splitter ajustável para priorizar texto ou gráficos conforme necessário
 - 🖼️ Janela de 1200x600px otimizada para laptops e desktops
+- ♻️ **Workflow integrado**: Use o botão "Usar como Input" para encadear conversões
 
 ---
 
@@ -86,7 +96,8 @@ Duas abas com renderização nativa de diagramas:
 2. **Visual Studio Code** instalado
 3. **Lazarus IDE** (inclui Free Pascal Compiler)
    - Download: https://www.lazarus-ide.org/
-   - Versão recomendada: Lazarus 3.6 com FPC 3.2.2 (64-bit)
+   - Versão recomendada: Lazarus 4.4 com FPC 3.2.2 (64-bit)
+   - Arquivo incluído no repositório: `lazarus-4.4-fpc-3.2.2-win64.exe`
 
 ### 🎯 Após clonar este repositório:
 
@@ -101,16 +112,15 @@ Duas abas com renderização nativa de diagramas:
 
 #### **Primeira vez - Instalar Lazarus:**
 
-1. **Baixar Lazarus IDE:**
-   - Acesse: https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%203.6/
-   - Baixe: `lazarus-3.6-fpc-3.2.2-win64.exe` (~250 MB)
-
-2. **Instalar:**
-   - Execute o instalador como Administrador
-   - Instale em `C:\lazarus` (caminho padrão recomendado)
+1. **Instalar Lazarus IDE (já incluído no repositório):**
+   ```powershell
+   # Execute o script de instalação
+   .\download_install_lazarus.ps1
+   ```
+   - O script irá instalar `lazarus-4.4-fpc-3.2.2-win64.exe` em `C:\lazarus`
    - Aguarde ~2-3 minutos
 
-3. **Compilar projeto:**
+2. **Compilar projeto:**
    ```powershell
    # Via VS Code (recomendado)
    # Aperte Ctrl+Shift+B → escolha "🎨 GUI: Compilar e Executar"
@@ -217,16 +227,27 @@ json2fsm/
    - Escolha: **🎨 GUI: Compilar e Executar**
    - Pronto! A interface gráfica abrirá automaticamente 🎉
 
-### 📝 **Testando com o exemplo:**
+### 📝 **Testando com os exemplos:**
 A aplicação já vem com `sample_afn.txt` carregado automaticamente:
-- Clique em **"🔄 Converter AFN → AFD"**
-- Veja o resultado formatado aparecer!
+
+**Workflow básico (AFN → AFD → MinDFA):**
+1. Clique em **"Converter AFN → AFD"**
+2. Clique em **"Minimizar AFD"**
+3. Alterne entre as abas de diagramas para comparar!
+
+**Workflow completo (AFN-ε → AFN → AFD → MinDFA):**
+1. Carregue `test_epsilon.txt` (📂 Carregar Arquivo)
+2. Clique em **"Remover Epsilon"**
+3. Clique em **"Usar como Input"** (aba AFN)
+4. Clique em **"Converter AFN → AFD"**
+5. Clique em **"Minimizar AFD"**
+6. Compare todos os 4 diagramas! 🎉
 
 ---
 
 ## 🧪 Casos de Teste Incluídos
 
-O diretório `testes/` contém 9 casos de teste cuidadosamente elaborados para demonstrar diferentes aspectos da conversão AFN→AFD:
+O diretório `testes/` contém 11 casos de teste cuidadosamente elaborados para demonstrar diferentes aspectos das conversões (AFN-ε→AFN→AFD→MinDFA):
 
 ### **Testes Básicos:**
 
@@ -271,6 +292,18 @@ O diretório `testes/` contém 9 casos de teste cuidadosamente elaborados para d
    - AFN: 6 estados → Múltiplos estados compostos
    - Testa limites do algoritmo
 
+### **Testes de Epsilon-Transições:**
+
+10. **`test_epsilon.txt`** - Epsilon-transições com símbolo ε
+    - AFN-ε: 4 estados com transições epsilon
+    - Demonstra remoção de ε-transições e epsilon-closure
+    - Usa notação unicode ε
+
+11. **`test_epsilon2.txt`** - Epsilon-transições com palavra "epsilon"
+    - AFN-ε: 3 estados com transições epsilon
+    - Demonstra suporte a múltiplas notações (ε, epsilon, e, &)
+    - Usa palavra completa "epsilon"
+
 ### **Como usar os testes:**
 
 1. Clique em **"📂 Carregar Arquivo..."** na GUI
@@ -279,8 +312,10 @@ O diretório `testes/` contém 9 casos de teste cuidadosamente elaborados para d
 4. Clique em **"🔄 Converter AFN → AFD"**
 5. Observe as **abas de diagramas** para visualização gráfica!
 
-### **💡 Dica:** 
-Use `test_nao_det.txt` e `test_explosao.txt` para ver a **explosão de estados compostos** nas abas de diagramas - é impressionante ver visualmente como o AFD cresce!
+### **💡 Dicas:** 
+- Use `test_nao_det.txt` e `test_explosao.txt` para ver a **explosão de estados compostos** nas abas de diagramas - é impressionante ver visualmente como o AFD cresce!
+- Use `test_epsilon.txt` e `test_epsilon2.txt` para entender **remoção de epsilon-transições** - compare as abas AFN-ε e AFN para ver o resultado!
+- Experimente o botão **"Usar como Input"** na aba AFN para encadear conversões: AFN-ε → AFN → AFD → MinDFA
 
 ---
 
@@ -349,7 +384,27 @@ Test-Path .\bin\afn2afdgui.exe
 
 ---
 
-## 🔬 Como Funciona o Algoritmo de Conversão AFN → AFD
+## 🔬 Como Funcionam os Algoritmos de Conversão
+
+O programa implementa três algoritmos principais:
+
+### **1️⃣ Remoção de Epsilon-Transições (AFN-ε → AFN)**
+
+Converte um AFN com epsilon-transições para um AFN equivalente sem epsilon.
+
+**Algoritmo:**
+1. **Epsilon-Closure**: Para cada estado, calcula o conjunto de estados alcançáveis apenas por ε-transições (usando DFS com pilha)
+2. **Expansão de transições**: Para cada transição `p --a--> q` no AFN-ε:
+   - Para cada estado `r` em `ε-closure(q)`, adiciona transição `p --a--> r` ao AFN
+3. **Ajuste de estados finais**: Um estado é final no AFN se sua ε-closure contém algum estado final do AFN-ε
+
+**Complexidade:** O(n² · m) onde n = estados, m = transições
+
+**Notações suportadas:** ε, epsilon, e, &
+
+---
+
+### **2️⃣ Conversão AFN → AFD (Construção de Subconjuntos)**
 
 O programa usa o algoritmo clássico de **Construção de Subconjuntos** (Subset Construction) para converter AFN em AFD.
 
@@ -409,19 +464,41 @@ Transições:
 ### **Características da Implementação:**
 
 ✅ **Suporta:**
+- **Transições epsilon** (ε, epsilon, e, &)
+- **Epsilon-closure** com algoritmo stack-based DFS
+- **Minimização de AFD** usando Myhill-Nerode
 - Múltiplos estados iniciais
 - Múltiplos estados finais
 - Não-determinismo (múltiplas transições com mesmo símbolo)
-
-❌ **NÃO suporta atualmente:**
-- Transições epsilon (ε-transições)
-- Minimização do AFD resultante
+- **Validação automática**: detecta epsilon em AFN antes de converter para AFD
+- **Workflow encadeado**: botão "Usar como Input" para conversões sequenciais
 
 ### **Estruturas de Dados:**
 - **`TStringSet`**: Classe para representar conjuntos de estados
 - **`dfaMap`**: Mapeia nome do conjunto → objeto TStringSet
 - **`workQ`**: Fila de estados a processar (BFS)
 - **`dfaTransitions`**: Array dinâmico com transições do AFD
+
+---
+
+### **3️⃣ Minimização de AFD (Algoritmo de Myhill-Nerode)**
+
+Reduz o número de estados do AFD eliminando estados equivalentes.
+
+**Algoritmo:**
+1. **Partição inicial**: Divide estados em dois grupos (finais e não-finais)
+2. **Refinamento iterativo**: Para cada partição e símbolo:
+   - Se estados na mesma partição vão para partições diferentes, separa-os
+3. **Convergência**: Repete até não haver mais refinamentos
+4. **Construção do MinDFA**: Cada partição final vira um único estado
+
+**Complexidade:** O(n · m · log n) onde n = estados, m = transições
+
+**Exemplo:**
+```
+AFD: {q0}, {q1}, {q2}, {q3}  (q2 e q3 são equivalentes)
+MinDFA: {q0}, {q1}, {q2,q3}  (estados unidos)
+```
 
 ---
 
@@ -479,20 +556,21 @@ A GUI utiliza **desenho nativo em Pascal** com componentes da Lazarus LCL:
 - ✅ Totalmente auto-contido (sem dependências externas)
 
 ### Limitações conhecidas:
-- ❌ Não suporta transições epsilon (ε-transições)
-- ❌ Não realiza minimização do AFD resultante
 - ❌ Diagrama não suporta zoom/pan (tamanho fixo baseado em quantidade de estados)
+- ✅ **Suporta epsilon-transições** (ε, epsilon, e, &)
+- ✅ **Suporta minimização de AFD** (algoritmo de Myhill-Nerode)
 - ✅ Suporta múltiplos estados iniciais e finais
 - ✅ Suporta não-determinismo completo
-- ✅ Visualização gráfica nativa integrada
+- ✅ Visualização gráfica nativa com 4 abas
+- ✅ **Validação automática** de epsilon antes de AFN→AFD
 
 ### Possíveis extensões futuras:
-- [ ] Suporte a epsilon-transições
-- [ ] Minimização de AFD (algoritmo de Hopcroft)
 - [ ] Export para DOT/Graphviz
 - [ ] Zoom/pan nos diagramas (ScrollBox + transformações)
-- [ ] Simulação de entrada em AFN/AFD
+- [ ] Simulação de entrada em AFN/AFD/MinDFA
 - [ ] Layout automático de grafos (force-directed)
+- [ ] Conversão AFD → Expressão Regular
+- [ ] Operações de autômatos (união, interseção, complemento)
 
 ---
 
@@ -522,7 +600,7 @@ Ctrl+Shift+B → 🎨 GUI: Compilar e Executar
 Ctrl+Shift+B → 🧹 Limpar arquivos compilados
 ```
 
-**💡 Dica:** Na GUI, use a aba **"Diagrama AFD"** depois de converter para ver visualmente como o algoritmo combinou os estados do AFN!
+**💡 Dica:** Na GUI, alterne entre as **4 abas de diagramas** (AFN-ε, AFN, AFD, MinDFA) para ver visualmente cada etapa da conversão! Use o botão **"Usar como Input"** na aba AFN para encadear conversões automaticamente.
 
 ---
 

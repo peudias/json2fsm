@@ -4,35 +4,28 @@
 
 - **📦 Começando**
   - [Instalação](instalacao.md)
-  - [Início Rápido](inicio-rapido.md)
-
-- **🎮 Guias**
   - [Como Usar a Interface](uso.md)
-  - [Formato de Entrada](formato.md)
+  - [Estrutura do Projeto](estrutura.md)
+  - [Tasks do VS Code](tasks.md)
+
+- **🧪 Testes e Exemplos**
   - [Casos de Teste](testes.md)
 
 - **🔬 Teoria**
   - [Algoritmo de Conversão](algoritmo.md)
-  - [Construção de Subconjuntos](subset-construction.md)
-  - [Complexidade](complexidade.md)
-
-- **💻 Desenvolvimento**
-  - [Arquitetura do Código](arquitetura.md)
-  - [Referência da API](api.md)
-  - [Compilação](compilacao.md)
+  - [🔀 Epsilon-Transições](epsilon-transicoes.md)
+  - [⚡ Minimização de AFD](minimizacao.md)
 
 - **🤝 Contribuindo**
   - [Como Contribuir](contribuindo.md)
-  - [Código de Conduta](codigo-conduta.md)
 
-- **ℹ️ Sobre**
+- **ℹ️ Ajuda**
   - [FAQ](faq.md)
   - [Troubleshooting](troubleshooting.md)
-  - [Changelog](changelog.md)
 
 ---
 
 - **Links Úteis**
-  - [![GitHub](https://icongr.am/simple/github.svg?size=16&color=currentColor&colored=false) GitHub](https://github.com/peudias/json2fsm)
-  - [![Lazarus](https://icongr.am/simple/lazarus.svg?size=16&color=currentColor&colored=false) Lazarus IDE](https://www.lazarus-ide.org/)
-  - [![Pascal](https://icongr.am/simple/pascal.svg?size=16&color=currentColor&colored=false) Free Pascal](https://www.freepascal.org/)
+  - [📂 GitHub](https://github.com/peudias/json2fsm)
+  - [🔧 Lazarus IDE](https://www.lazarus-ide.org/)
+  - [📘 Free Pascal](https://www.freepascal.org/)

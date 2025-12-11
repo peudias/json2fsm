@@ -1,6 +1,7 @@
 program afn2afdgui;
 
 {$mode objfpc}{$H+}
+{$APPTYPE CONSOLE}
 
 uses
   {$IFDEF UNIX}
@@ -17,9 +18,21 @@ uses
 {$R appicon.res}
 
 begin
+  WriteLn('===========================================');
+  WriteLn('  AFN -> AFD Converter - Console Log');
+  WriteLn('===========================================');
+  WriteLn('');
+  
   RequireDerivedFormResource:=True;
   Application.Scaled:=True;
   Application.Initialize;
   Application.CreateForm(TFormMain, FormMain);
+  
+  WriteLn('[INIT] Aplicacao iniciada');
+  WriteLn('');
+  
   Application.Run;
+  
+  WriteLn('');
+  WriteLn('[EXIT] Aplicacao encerrada');
 end.

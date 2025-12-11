@@ -4,10 +4,11 @@
     {
       "label": "🎨 GUI: Compilar",
       "type": "shell",
-      "command": "C:\\lazarus\\lazbuild.exe",
+      "command": "powershell.exe",
       "args": [
-        "--build-mode=Release",
-        "${workspaceFolder}\\src\\afn2afdgui.lpi"
+        "-NoProfile",
+        "-Command",
+        "Remove-Item -Path '${workspaceFolder}\\src\\lib\\x86_64-win64\\*' -Recurse -Force -ErrorAction SilentlyContinue; C:\\lazarus\\lazbuild.exe --build-mode=Release --build-all '${workspaceFolder}\\src\\afn2afdgui.lpi'"
       ],
       "group": "build",
       "presentation": {
@@ -28,14 +29,31 @@
       "problemMatcher": []
     },
     {
-      "label": "🎨 GUI: Compilar e Executar",
-      "dependsOn": ["🎨 GUI: Compilar"],
+      "label": "🔍 GUI: Executar com Log",
       "type": "shell",
       "command": "${workspaceFolder}\\bin\\afn2afdgui.exe",
       "group": "build",
       "presentation": {
-        "reveal": "never",
-        "panel": "shared"
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔍 GUI: Compilar e Executar",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-Command",
+        "Remove-Item -Path '${workspaceFolder}\\src\\lib\\x86_64-win64\\*' -Recurse -Force -ErrorAction SilentlyContinue; C:\\lazarus\\lazbuild.exe --build-mode=Release --build-all '${workspaceFolder}\\src\\afn2afdgui.lpi'; if ($LASTEXITCODE -eq 0) { & '${workspaceFolder}\\bin\\afn2afdgui.exe' }"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false
       },
       "problemMatcher": []
     },

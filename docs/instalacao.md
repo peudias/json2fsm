@@ -27,47 +27,49 @@ cd json2fsm
 
 ### Passo 2: Instalar Lazarus IDE
 
-O Lazarus IDE já inclui o Free Pascal Compiler, então você só precisa instalar uma coisa!
+O Lazarus IDE já inclui o Free Pascal Compiler, e o instalador está incluído no repositório!
 
 <!-- tabs:start -->
 
-#### **Download Manual**
-
-1. Acesse: [https://www.lazarus-ide.org/](https://www.lazarus-ide.org/)
-2. Baixe: **Lazarus 3.6 - Windows 64-bit**
-3. Arquivo: `lazarus-3.6-fpc-3.2.2-win64.exe` (~250 MB)
-
-#### **Download Direto**
+#### **Script Automático ⭐**
 
 ```powershell
-# Link direto do SourceForge
-$url = "https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%203.6/lazarus-3.6-fpc-3.2.2-win64.exe/download"
-
-# Baixar
-Invoke-WebRequest -Uri $url -OutFile "lazarus-installer.exe"
+# Execute o script de instalação
+.\download_install_lazarus.ps1
 ```
+
+O script irá:
+- ✅ Verificar se o Lazarus já está instalado
+- ✅ Instalar `lazarus-4.4-fpc-3.2.2-win64.exe` em `C:\lazarus`
+- ✅ Confirmar a instalação
+
+#### **Instalação Manual**
+
+```powershell
+# Execute o instalador incluído no repositório
+.\lazarus-4.4-fpc-3.2.2-win64.exe
+```
+
+Ou baixe a versão mais recente:
+1. Acesse: [https://www.lazarus-ide.org/](https://www.lazarus-ide.org/)
+2. Baixe: **Lazarus 4.4 - Windows 64-bit**
+3. Execute o instalador
 
 <!-- tabs:end -->
-
-### Passo 3: Instalar Lazarus
-
-```powershell
-# Execute o instalador como Administrador
-.\lazarus-installer.exe
-```
 
 **⚙️ Configurações de Instalação:**
 - 📁 **Diretório:** `C:\lazarus` (padrão recomendado)
 - ⏱️ **Tempo:** ~2-3 minutos
 - 💾 **Espaço:** ~800 MB
+- 📦 **Versão:** Lazarus 4.4 com FPC 3.2.2
 
 > ⚠️ **IMPORTANTE:** Instale em `C:\lazarus` para as tasks do VS Code funcionarem automaticamente!
 
-### Passo 4: Compilar o Projeto
+### Passo 3: Compilar o Projeto
 
 <!-- tabs:start -->
 
-#### **Via VS Code** ⭐ RECOMENDADO
+#### **Via VS Code ⭐**
 
 ```powershell
 # 1. Abrir no VS Code
@@ -80,7 +82,7 @@ code .
 #### **Via Script PowerShell**
 
 ```powershell
-# Executar script de instalação/compilação
+# Executar script de compilação
 .\install_and_compile_gui.ps1
 ```
 
@@ -181,7 +183,7 @@ Para remover completamente:
 
 ```powershell
 # 1. Desinstalar Lazarus
-# Painel de Controle → Programas → Lazarus 3.6
+# Painel de Controle → Programas → Lazarus 4.4
 
 # 2. Remover diretório do projeto
 cd ..

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
-  <Compiler Value="C:\lazarus\fpc\3.2.2\bin\x86_64-win64\fpc.exe" Date="1497193866"/>
-  <Params Value=" -MObjFPC -Scghi -CX -O3 -XX -WG -l -vewnhibq -FiC:\Users\phpdi\Desktop\faculdade\0codes\json2fsm\src\lib\x86_64-win64 -FuC:\lazarus\lcl\units\x86_64-win64\win32 -FuC:\lazarus\lcl\units\x86_64-win64 -FuC:\lazarus\components\freetype\lib\x86_64-win64 -FuC:\lazarus\components\lazutils\lib\x86_64-win64 -FuC:\lazarus\packager\units\x86_64-win64 -FuC:\Users\phpdi\Desktop\faculdade\0codes\json2fsm\src\ -FUC:\Users\phpdi\Desktop\faculdade\0codes\json2fsm\src\lib\x86_64-win64\ -FEC:\Users\phpdi\Desktop\faculdade\0codes\json2fsm\bin\ -oC:\Users\phpdi\Desktop\faculdade\0codes\json2fsm\bin\afn2afdgui.exe -dLCL -dLCLwin32 afn2afdgui.lpr"/>
+  <Compiler Value="C:\lazarus\fpc\3.2.2\bin\x86_64-win64\fpc.exe" Date="1533567158"/>
+  <Params Value="-MObjFPC -Scghi -CX -O3 -XX -WG -l -vewnhibq -FiC:\Users\hfrei\OneDrive\Documentos\GitHub\json2fsm\src\lib\x86_64-win64 -FuC:\Users\hfrei\OneDrive\Documentos\GitHub\json2fsm\src\ -FuC:\lazarus\lcl\units\x86_64-win64\win32 -FuC:\lazarus\lcl\units\x86_64-win64 -FuC:\lazarus\components\freetype\lib\x86_64-win64 -FuC:\lazarus\components\lazutils\lib\x86_64-win64 -FuC:\lazarus\packager\units\x86_64-win64 -FUC:\Users\hfrei\OneDrive\Documentos\GitHub\json2fsm\src\lib\x86_64-win64\ -FEC:\Users\hfrei\OneDrive\Documentos\GitHub\json2fsm\bin\ -oC:\Users\hfrei\OneDrive\Documentos\GitHub\json2fsm\bin\afn2afdgui.exe -dLCL -dLCLwin32 afn2afdgui.lpr"/>
 </CONFIG>

@@ -3,7 +3,7 @@ object FormMain: TFormMain
   Height = 600
   Top = 150
   Width = 1200
-  Caption = 'Conversor AFN → AFD'
+  Caption = 'Conversor AFN-ε → AFN → AFD → MinDFA'
   ClientHeight = 600
   ClientWidth = 1200
   OnCreate = FormCreate
@@ -30,18 +30,8 @@ object FormMain: TFormMain
       Left = 12
       Height = 15
       Top = 45
-      Width = 98
-      Caption = 'Entrada do AFN:'
-      Font.Style = [fsBold]
-      ParentColor = False
-      ParentFont = False
-    end
-    object lblOutput: TLabel
-      Left = 12
-      Height = 15
-      Top = 300
-      Width = 104
-      Caption = 'Resultado do AFD:'
+      Width = 120
+      Caption = 'Entrada:'
       Font.Style = [fsBold]
       ParentColor = False
       ParentFont = False
@@ -50,7 +40,7 @@ object FormMain: TFormMain
       Left = 68
       Height = 23
       Top = 8
-      Width = 390
+      Width = 195
       ReadOnly = True
       TabOrder = 0
       Text = ''
@@ -66,18 +56,17 @@ object FormMain: TFormMain
     end
     object memoInput: TMemo
       Left = 12
-      Height = 180
+      Height = 150
       Top = 68
       Width = 528
       Lines.Strings = (
-        'a b'
-        'q0 q1 q2'
+        'a b ε'
+        'q0 q1 q2 q3'
         'q0'
-        'q2'
-        'q0 a q0'
-        'q0 b q0'
+        'q3'
         'q0 a q1'
-        'q1 b q2'
+        'q1 ε q2'
+        'q2 b q3'
       )
       ScrollBars = ssAutoBoth
       TabOrder = 2
@@ -85,46 +74,126 @@ object FormMain: TFormMain
     object Panel3: TPanel
       Left = 1
       Height = 45
-      Top = 254
+      Top = 224
       Width = 548
       Align = alNone
       ClientHeight = 45
       ClientWidth = 548
       TabOrder = 3
-      object btnConvert: TButton
+      object btnRemoveEpsilon: TButton
         Left = 12
         Height = 35
         Top = 5
-        Width = 180
-        Caption = '🔄 Converter AFN → AFD'
+        Width = 170
+        Caption = '🔀 AFN-ε → AFN'
         Font.Style = [fsBold]
         ParentFont = False
         TabOrder = 0
-        OnClick = btnConvertClick
+        OnClick = btnRemoveEpsilonClick
       end
-      object btnClear: TButton
-        Left = 200
+      object btnConvert: TButton
+        Left = 190
         Height = 35
         Top = 5
-        Width = 100
-        Caption = '🗑️ Limpar'
+        Width = 170
+        Caption = '🔄 AFN → AFD'
+        Font.Style = [fsBold]
+        ParentFont = False
         TabOrder = 1
-        OnClick = btnClearClick
+        OnClick = btnConvertClick
+      end
+      object btnMinimize: TButton
+        Left = 368
+        Height = 35
+        Top = 5
+        Width = 170
+        Caption = '⚡ Minimizar AFD'
+        Enabled = False
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 2
+        OnClick = btnMinimizeClick
       end
     end
-    object memoOutput: TMemo
-      Left = 12
-      Height = 270
-      Top = 320
-      Width = 528
-      Font.Name = 'Courier New'
-      Lines.Strings = (
-        'Clique em "Converter" para gerar o AFD...'
-      )
-      ParentFont = False
-      ReadOnly = True
-      ScrollBars = ssAutoBoth
+    object PageControl2: TPageControl
+      Left = 1
+      Height = 312
+      Top = 281
+      Width = 548
+      ActivePage = TabNFAOutput
+      TabIndex = 0
       TabOrder = 4
+      object TabNFAOutput: TTabSheet
+        Caption = '🔀 AFN (sem ε)'
+        ClientHeight = 284
+        ClientWidth = 540
+        object memoNFAOutput: TMemo
+          Left = 0
+          Height = 284
+          Top = 0
+          Width = 540
+          Align = alClient
+          Font.Name = 'Courier New'
+          Lines.Strings = (
+            'Remova epsilon-transições para ver o AFN resultante...'
+          )
+          ParentFont = False
+          ReadOnly = True
+          ScrollBars = ssAutoBoth
+          TabOrder = 0
+        end
+        object btnUseAsInput: TButton
+          Left = 365
+          Height = 30
+          Top = 249
+          Width = 150
+          Anchors = [akRight, akBottom]
+          Caption = '📥 Usar como Input'
+          Enabled = False
+          TabOrder = 1
+          OnClick = btnUseAsInputClick
+        end
+      end
+      object TabOutput: TTabSheet
+        Caption = '📊 Resultado AFD'
+        ClientHeight = 284
+        ClientWidth = 540
+        object memoOutput: TMemo
+          Left = 0
+          Height = 284
+          Top = 0
+          Width = 540
+          Align = alClient
+          Font.Name = 'Courier New'
+          Lines.Strings = (
+            'Clique em "AFN → AFD" para gerar o resultado...'
+          )
+          ParentFont = False
+          ReadOnly = True
+          ScrollBars = ssAutoBoth
+          TabOrder = 0
+        end
+      end
+      object TabMinOutput: TTabSheet
+        Caption = '⚡ AFD Minimizado'
+        ClientHeight = 284
+        ClientWidth = 540
+        object memoMinOutput: TMemo
+          Left = 0
+          Height = 284
+          Top = 0
+          Width = 540
+          Align = alClient
+          Font.Name = 'Courier New'
+          Lines.Strings = (
+            'Execute a minimização para ver o resultado...'
+          )
+          ParentFont = False
+          ReadOnly = True
+          ScrollBars = ssAutoBoth
+          TabOrder = 0
+        end
+      end
     end
   end
   object Splitter1: TSplitter
@@ -141,12 +210,35 @@ object FormMain: TFormMain
     Height = 600
     Top = 0
     Width = 645
-    ActivePage = TabNFA
+    ActivePage = TabEpsilonNFA
     Align = alClient
     TabIndex = 0
     TabOrder = 2
+    object TabEpsilonNFA: TTabSheet
+      Caption = '📊 AFN-ε'
+      ClientHeight = 572
+      ClientWidth = 637
+      object PaintBoxEpsilonNFA: TPaintBox
+        Left = 0
+        Height = 572
+        Top = 0
+        Width = 637
+        Align = alClient
+        OnPaint = PaintBoxEpsilonNFAPaint
+      end
+      object btnClearEpsilonNFA: TButton
+        Left = 551
+        Height = 30
+        Top = 10
+        Width = 80
+        Anchors = [akTop, akRight]
+        Caption = '🗑️ Limpar'
+        TabOrder = 0
+        OnClick = btnClearClick
+      end
+    end
     object TabNFA: TTabSheet
-      Caption = '📊 Diagrama AFN'
+      Caption = '🔀 AFN (sem ε)'
       ClientHeight = 572
       ClientWidth = 637
       object PaintBoxNFA: TPaintBox
@@ -156,6 +248,16 @@ object FormMain: TFormMain
         Width = 637
         Align = alClient
         OnPaint = PaintBoxNFAPaint
+      end
+      object btnClearNFA: TButton
+        Left = 551
+        Height = 30
+        Top = 10
+        Width = 80
+        Anchors = [akTop, akRight]
+        Caption = '🗑️ Limpar'
+        TabOrder = 0
+        OnClick = btnClearClick
       end
     end
     object TabDFA: TTabSheet
@@ -169,6 +271,39 @@ object FormMain: TFormMain
         Width = 637
         Align = alClient
         OnPaint = PaintBoxDFAPaint
+      end
+      object btnClearDFA: TButton
+        Left = 551
+        Height = 30
+        Top = 10
+        Width = 80
+        Anchors = [akTop, akRight]
+        Caption = '🗑️ Limpar'
+        TabOrder = 0
+        OnClick = btnClearClick
+      end
+    end
+    object TabMinDFA: TTabSheet
+      Caption = '⚡ AFD Minimizado'
+      ClientHeight = 572
+      ClientWidth = 637
+      object PaintBoxMinDFA: TPaintBox
+        Left = 0
+        Height = 572
+        Top = 0
+        Width = 637
+        Align = alClient
+        OnPaint = PaintBoxMinDFAPaint
+      end
+      object btnClearMinDFA: TButton
+        Left = 551
+        Height = 30
+        Top = 10
+        Width = 80
+        Anchors = [akTop, akRight]
+        Caption = '🗑️ Limpar'
+        TabOrder = 0
+        OnClick = btnClearClick
       end
     end
   end

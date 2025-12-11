@@ -1,18 +1,23 @@
-# json2fsm — Conversor AFN → AFD em Pascal
+# json2fsm — Conversor AFN-ε → AFN → AFD em Pascal
 
-> Conversor de Autômato Finito Não-determinístico (AFN) para Autômato Finito Determinístico (AFD) com visualização gráfica interativa.
+> Conversor completo de Autômatos Finitos: AFN com Epsilon-Transições → AFN → AFD → AFD Minimizado, com visualização gráfica interativa.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)
 ![Pascal](https://img.shields.io/badge/Pascal-FPC%203.2.2-orange.svg)
-![Lazarus](https://img.shields.io/badge/Lazarus-3.6-green.svg)
+![Lazarus](https://img.shields.io/badge/Lazarus-4.4-green.svg)
 ![License](https://img.shields.io/badge/license-Educacional-lightgrey.svg)
 
 ## ✨ Principais Recursos
 
 - 🎨 **Interface Gráfica Intuitiva** - GUI desenvolvida com Lazarus LCL
-- 📊 **Visualização de Diagramas** - Renderização nativa dos autômatos AFN e AFD
-- 🔄 **Conversão Automática** - Algoritmo de construção de subconjuntos
-- 📁 **Casos de Teste** - 9 exemplos incluídos para aprendizado
+- 📊 **Visualização de Diagramas** - Renderização nativa de AFN-ε, AFN, AFD e AFD Minimizado
+- 🔀 **Remoção de Epsilon** - Conversão de AFN-ε para AFN (sem epsilon-transições)
+- 🔄 **Conversão Automática** - Algoritmo de construção de subconjuntos (AFN → AFD)
+- ⚡ **Minimização de AFD** - Redução de estados equivalentes (Myhill-Nerode)
+- 📋 **Abas Organizadas** - Resultados separados por tipo (AFN, AFD e AFD Minimizado)
+- 📥 **Usar como Input** - Copie o AFN resultante para continuar o processo
+- 📝 **Logs Detalhados** - Acompanhe cada etapa no terminal
+- 📁 **Casos de Teste** - 11 exemplos incluídos (incluindo 2 com epsilon)
 - ⚡ **Performance** - Implementação otimizada em Pascal nativo
 - 🖼️ **Layout Dividido** - Compare entrada, resultado textual e diagramas simultaneamente
 
@@ -20,21 +25,33 @@
 
 ```mermaid
 graph LR
-    A[Arquivo AFN] --> B[Interface GUI]
-    B --> C[Conversão AFN→AFD]
-    C --> D[Resultado Textual]
-    C --> E[Diagrama AFN]
-    C --> F[Diagrama AFD]
+    A[Arquivo AFN-ε] --> B[Interface GUI]
+    B --> C[Remoção Epsilon]
+    C --> D[AFN sem ε]
+    D --> E[Usar como Input]
+    E --> F[Conversão AFN→AFD]
+    F --> G[Resultado AFD]
+    G --> H[Minimização]
+    H --> I[AFD Minimizado]
+    C --> J[Diagrama AFN-ε]
+    D --> K[Diagrama AFN]
+    F --> L[Diagrama AFD]
+    H --> M[Diagrama MinDFA]
     style B fill:#42b983
-    style C fill:#ff6b6b
+    style C fill:#9b59b6
+    style F fill:#ff6b6b
+    style H fill:#ffd93d
 ```
 
-1. **Carregar** arquivos `.txt` com especificação de AFN
-2. **Editar** manualmente o AFN na interface
-3. **Converter** para AFD com um clique
-4. **Visualizar** graficamente ambos os autômatos
-5. **Comparar** AFN e AFD lado a lado
-6. **Testar** com 9 casos de teste incluídos
+1. **Carregar** arquivos `.txt` com AFN ou AFN-ε
+2. **Remover epsilon** - Converter AFN-ε → AFN
+3. **Usar como Input** - Copiar AFN para entrada
+4. **Converter** AFN → AFD com um clique
+5. **Minimizar** o AFD gerado (reduzir estados)
+6. **Visualizar** graficamente AFN-ε, AFN, AFD e AFD Minimizado
+7. **Comparar** em abas separadas
+8. **Testar** com 11 casos de teste incluídos
+9. **Acompanhar logs** detalhados no terminal
 
 ## 🚀 Início Rápido
 
@@ -47,8 +64,8 @@ graph LR
 git clone https://github.com/peudias/json2fsm.git
 cd json2fsm
 
-# 2. Instale o Lazarus IDE
-# Baixe de: https://www.lazarus-ide.org/
+# 2. Instale o Lazarus IDE (arquivo incluído no repo)
+.\download_install_lazarus.ps1
 
 # 3. Compile e execute
 # No VS Code: Ctrl+Shift+B → "🎨 GUI: Compilar e Executar"
@@ -88,12 +105,21 @@ C:\lazarus\lazbuild.exe --build-mode=Release src\afn2afdgui.lpi
 
 Explore a documentação completa:
 
-- [📦 Instalação](instalacao.md) - Guia completo de instalação
-- [🎮 Como Usar](uso.md) - Tutorial detalhado da interface
+### 🚀 Começando
+- [📦 Instalação](instalacao.md) - Guia completo de instalação do Lazarus 4.4
+- [🎮 Como Usar](uso.md) - Tutorial detalhado da interface GUI
+- [📂 Estrutura do Projeto](estrutura.md) - Organização de arquivos e pastas
+- [⚙️ Tasks do VS Code](tasks.md) - Comandos de compilação e execução
+
+### 🧪 Testes e Teoria
 - [🧪 Casos de Teste](testes.md) - Descrição dos 9 testes incluídos
-- [🔬 Algoritmo](algoritmo.md) - Explicação do algoritmo de conversão
-- [💻 Referência da API](api.md) - Documentação do código Pascal
+- [🔬 Algoritmo de Conversão](algoritmo.md) - Explicação do algoritmo AFN → AFD
+- [⚡ Minimização de AFD](minimizacao.md) - Como funciona a redução de estados
+
+### 💬 Suporte
 - [🤝 Contribuindo](contribuindo.md) - Como contribuir com o projeto
+- [❓ FAQ](faq.md) - Perguntas frequentes
+- [🔧 Troubleshooting](troubleshooting.md) - Solução de problemas
 
 ## 🌟 Características Técnicas
 
