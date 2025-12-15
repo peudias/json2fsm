@@ -1,5 +1,64 @@
 # 📝 Changelog
 
+## 🐛 Versão 3.1.1 - Correção do Algoritmo de Minimização
+
+**Data:** 15 de Dezembro de 2025
+
+### 🔧 Bug Crítico Corrigido
+
+#### ❌ Problema: Minimização Gerando AFDs Incorretos
+
+**Sintoma:** O algoritmo de minimização estava produzindo AFDs muito pequenos e incorretos, com estados que deveriam estar agrupados sendo separados.
+
+**Causa:** Lógica invertida no loop de refinamento de partições
+- O código **removia** estados quando eram **equivalentes** (deveriam agrupar!)
+- O código **mantinha** estados quando eram **diferentes** (deveriam separar!)
+
+**Código Problemático:**
+```pascal
+if equiv then
+  partition.Delete(j);      // ❌ Remove se equivalente
+else
+  Inc(j);                   // Avança se diferente
+```
+
+#### ✅ Solução Implementada
+
+**Nova lógica de agrupamento:**
+```pascal
+newSubPartition := TStringList.Create;
+newSubPartition.Add(representante);
+
+for each estado do
+  if equiv then
+    newSubPartition.Add(estado);  // ✅ Agrupa equivalentes
+  else
+    Inc(j);                       // Separa diferentes
+```
+
+**Resultado:**
+- Estados equivalentes agora são **agrupados corretamente**
+- AFDs minimizados têm o **tamanho correto**
+- Algoritmo segue corretamente o **Teorema de Myhill-Nerode**
+
+### 📊 Exemplo de Correção
+
+**AFD de teste (6 estados → deveria minimizar para 3):**
+
+ANTES do fix: ❌ 5-6 estados (nenhuma minimização)
+DEPOIS do fix: ✅ 3 estados ([q0,q4], [q1,q3], [q2,q5])
+
+### 🧪 Testes Adicionados
+
+- `test_minimizacao_simples.txt` - Teste básico de minimização
+- `test_minimizacao_exemplo_teoria.txt` - Exemplo teórico (6→3 estados)
+
+### 📚 Documentação
+
+- Novo arquivo: [BUG_FIX_MINIMIZACAO.md](BUG_FIX_MINIMIZACAO.md) com análise completa do bug
+
+---
+
 ## 🎉 Versão 3.1.0 - Suporte a JSON e Conversão Automática Inteligente
 
 **Data:** 16 de Janeiro de 2025

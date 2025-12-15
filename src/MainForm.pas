@@ -3930,7 +3930,7 @@ var
   i, j, k, m, partIdx1, partIdx2: Integer;
   statePartition: array of Integer;
   partitionsChanged: Boolean;
-  partition: TStringList;
+  partition, newSubPartition: TStringList;
   state1, state2, sym, dest1, dest2: string;
   equiv: Boolean;
   partitionNames: TStringList;
@@ -4051,25 +4051,25 @@ begin
      *   - Logo, algoritmo SEMPRE termina
      **}
     repeat
-      partitionsChanged := False;  // Flag: alguma partição foi dividida?
-      newPartitions := TList.Create;  // Nova lista de partições refinadas
+      partitionsChanged := False;
+      newPartitions := TList.Create;
       
       {**
-       * Iterar por todas as partições atuais
+       * REFINAMENTO DE PARTIÇÕES
        * 
-       * Para cada partição, tentar dividir em subpartições menores
-       * baseado no comportamento dos estados.
+       * ALGORITMO CORRETO:
+       * Para cada partição:
+       *   1. Processar estados enquanto houver estados não processados
+       *   2. Pegar primeiro estado como representante
+       *   3. Criar nova subpartição com este representante
+       *   4. Adicionar todos os estados EQUIVALENTES ao representante
+       *   5. Estados NÃO equivalentes ficam para próxima iteração (novo representante)
        **}
       for partIdx1 := 0 to partitions.Count - 1 do
       begin
         partition := TStringList(partitions[partIdx1]);
         
-        {**
-         * OTIMIZAÇÃO: Partição com ≤ 1 estado não pode ser dividida
-         * 
-         * Se partição tem apenas 1 estado, não há o que comparar.
-         * Adiciona à nova lista sem modificação e pula para próxima.
-         **}
+        {** Partição com ≤ 1 estado não pode ser dividida **}
         if partition.Count <= 1 then
         begin
           newPartitions.Add(partition);
@@ -4077,78 +4077,43 @@ begin
         end;
         
         {**
-         * TENTATIVA DE DIVISÃO: Verificar se estados são realmente equivalentes
+         * PROCESSAMENTO DE PARTIÇÃO COM MÚLTIPLOS ESTADOS
          * 
-         * ESTRATÉGIA:
-         *   - Pegar cada estado state1
-         *   - Comparar com todos os outros estados state2 na mesma partição
-         *   - Se state1 ≠ state2: remover state2 (será processado depois)
-         *   - Se state1 = state2: manter juntos
-         * 
-         * ALGORITMO INGÊNUO: Comparação par a par
-         * (Algoritmo de Hopcroft seria mais eficiente, mas mais complexo)
+         * Estratégia: Processar estados um a um, criando subpartições
+         * de estados equivalentes
          **}
-        i := 0;
-        while i < partition.Count do
+        partIdx2 := newPartitions.Count;  // Guardar número de partições ANTES de processar
+        
+        while partition.Count > 0 do
         begin
-          state1 := partition[i];
+          {** Pegar primeiro estado como representante **}
+          state1 := partition[0];
+          partition.Delete(0);
+          
+          {** Criar nova subpartição com o representante **}
+          newSubPartition := TStringList.Create;
+          newSubPartition.Add(state1);
           
           {**
-           * Remover temporariamente state1 para evitar auto-comparação
-           * 
-           * CUIDADO: Este delete não libera memória, apenas remove da lista.
-           * state1 ainda existe na variável local.
+           * Verificar quais outros estados são equivalentes a state1
+           * e adicioná-los à mesma subpartição
            **}
-          TStringList(partitions[partIdx1]).Delete(i);
-          
-          equiv := True;
-          j := i;  // Começar de i (não de 0) pois já processamos estados anteriores
-          
-          {**
-           * LOOP INTERNO: Comparar state1 com todos os estados restantes
-           * 
-           * Para cada state2 após state1:
-           *   - Verificar se têm comportamento idêntico
-           *   - Se diferente: deixar state2 na partição (será processado depois)
-           *   - Se igual: remover state2 (é equivalente a state1)
-           **}
+          j := 0;
           while j < partition.Count do
           begin
             state2 := partition[j];
-            equiv := True;  // Assumir equivalente até provar o contrário
+            equiv := True;
             
             {**
              * TESTE DE EQUIVALÊNCIA: Verificar comportamento para CADA símbolo
-             * 
-             * DOIS ESTADOS SÃO EQUIVALENTES SE:
-             *   ∀a ∈ Σ: [δ(p,a)] = [δ(q,a)]
-             * 
-             * Ou seja: Para todo símbolo, os destinos devem estar na MESMA partição.
-             * 
-             * EXEMPLO:
-             *   state1 --a--> q3  (q3 está em P₁)
-             *   state2 --a--> q4  (q4 está em P₂)
-             *   Como P₁ ≠ P₂ → state1 ≠ state2 → NÃO equivalentes!
              **}
             for k := 0 to NFAAlphabet.Count - 1 do
             begin
               sym := NFAAlphabet[k];
-              
-              {**
-               * Encontrar destinos de state1 e state2 com símbolo atual
-               * 
-               * BUSCA: Percorrer todas as transições do AFD
-               * Procurar: (state1, sym, ?) e (state2, sym, ?)
-               * 
-               * dest1 = destino de state1 com símbolo sym
-               * dest2 = destino de state2 com símbolo sym
-               * 
-               * OBSERVAÇÃO: dest pode ser '' se não houver transição
-               * (estado de rejeição implícito)
-               **}
               dest1 := '';
               dest2 := '';
               
+              {** Encontrar destinos **}
               for trans in DFATransitions do
               begin
                 if (trans.FromState = state1) and (trans.Symbol = sym) then
@@ -4157,89 +4122,61 @@ begin
                   dest2 := trans.ToState;
               end;
               
-              {**
-               * VERIFICAÇÃO DE EQUIVALÊNCIA: Destinos na mesma partição?
-               * 
-               * CASO 1: Ambos têm transição (dest1 ≠ '' e dest2 ≠ '')
-               *   - Obter partição de cada destino
-               *   - Se partições diferentes → estados NÃO equivalentes
-               * 
-               * CASO 2: Apenas um tem transição (dest1 ≠ '' XOR dest2 ≠ '')
-               *   - Um vai para estado válido, outro para rejeição
-               *   - Comportamento diferente → NÃO equivalentes
-               * 
-               * CASO 3: Nenhum tem transição (dest1 = '' e dest2 = '')
-               *   - Ambos vão para rejeição
-               *   - Comportamento igual (continua verificando outros símbolos)
-               * 
-               * EXEMPLO:
-               *   q0 --a--> q2 (q2 está em P₁)
-               *   q1 --a--> q3 (q3 está em P₂)
-               *   Como P₁ ≠ P₂ → q0 e q1 NÃO são equivalentes!
-               **}
+              {** Verificar se destinos estão na mesma partição **}
               if (dest1 <> '') and (dest2 <> '') then
               begin
-                {** CASO 1: Ambos têm destino válido **}
                 partIdx2 := statePartition[DFAStates.IndexOf(dest1)];
                 m := statePartition[DFAStates.IndexOf(dest2)];
                 
                 if partIdx2 <> m then
                 begin
-                  equiv := False;  // Destinos em partições diferentes!
-                  Break;           // Não precisa verificar mais símbolos
+                  equiv := False;
+                  Break;
                 end;
               end
               else if dest1 <> dest2 then
               begin
-                {**
-                 * CASO 2: Apenas um tem destino
-                 * 
-                 * Se dest1 = '' e dest2 = 'q3' (ou vice-versa):
-                 *   - Um vai para rejeição, outro continua
-                 *   - Comportamentos diferentes!
-                 **}
                 equiv := False;
                 Break;
               end;
-              {** CASO 3: Ambos vazios (dest1 = dest2 = '') - continua loop **}
-            end;  // Fim loop símbolos
+            end;
             
             {**
-             * DECISÃO: Estados são equivalentes ou não?
-             * 
-             * Se NOT equiv (comportamento diferente encontrado):
-             *   - Deixar state2 na partição (será comparado com próximo state1)
-             *   - Incrementar j para próximo estado
-             * 
-             * Se equiv (comportamento idêntico para TODOS os símbolos):
-             *   - Remover state2 da partição (é equivalente a state1)
-             *   - Marcar partitionsChanged = True (houve divisão!)
-             *   - NÃO incrementar j (próximo estado agora está na posição j)
+             * DECISÃO CORRETA:
+             * Se equiv = True: state2 É equivalente a state1
+             *   → REMOVER state2 da partição
+             *   → ADICIONAR state2 à nova subpartição com state1
+             * Se equiv = False: state2 NÃO é equivalente
+             *   → DEIXAR state2 na partição (será processado como novo representante)
              **}
-            if not equiv then
-              Inc(j)  // state2 não é equivalente, próximo
+            if equiv then
+            begin
+              {** Estados equivalentes: adicionar à mesma subpartição **}
+              newSubPartition.Add(state2);
+              partition.Delete(j);
+              {** NÃO incrementar j, próximo estado agora está em j **}
+            end
             else
             begin
-              partition.Delete(j);      // state2 é equivalente, remover
-              partitionsChanged := True; // Partição foi modificada
+              {** Estados diferentes: deixar na partição, próximo **}
+              Inc(j);
             end;
-          end;  // Fim loop comparação com outros estados
+          end;
           
           {**
-           * Reinsere state1 de volta na partição
-           * 
-           * IMPORTANTE: state1 foi removido temporariamente no início.
-           * Agora que comparamos com todos os outros, adicionar de volta.
-           * 
-           * Todos os estados equivalentes a state1 foram removidos,
-           * então agora state1 representa sua própria classe de equivalência.
+           * Adicionar nova subpartição à lista de partições refinadas
            **}
-          partition.Insert(i, state1);
-          Inc(i);  // Próximo estado a ser processado
-        end;  // Fim loop estados da partição
+          newPartitions.Add(newSubPartition);
+        end;
         
-        newPartitions.Add(partition);
-      end;  // Fim loop partições
+        {**
+         * DETECÇÃO DE MUDANÇA:
+         * Se uma partição foi dividida em MAIS de uma subpartição,
+         * então houve refinamento e precisamos continuar iterando.
+         **}
+        if newPartitions.Count > partIdx2 + 1 then
+          partitionsChanged := True;
+      end;
       
       {**
        * Substituir lista de partições antiga pela nova
@@ -4251,19 +4188,6 @@ begin
       
       {**
        * ATUALIZAR MAPEAMENTO: statePartition[i] → nova partição
-       * 
-       * IMPORTANTE: Após o refinamento, os índices das partições mudaram.
-       * Precisamos atualizar o array statePartition para refletir
-       * em qual partição cada estado está agora.
-       * 
-       * ALGORITMO:
-       *   Para cada partição i:
-       *     Para cada estado s nessa partição:
-       *       statePartition[índice de s] = i
-       * 
-       * EXEMPLO:
-       *   Se estado "q0" está na partição 2:
-       *     statePartition[DFAStates.IndexOf("q0")] = 2
        **}
       for i := 0 to partitions.Count - 1 do
       begin

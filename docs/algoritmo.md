@@ -2,62 +2,7 @@
 
 Este documento explica em detalhes o algoritmo de **Construção de Subconjuntos** (Subset Construction) usado para converter AFN em AFD.
 
-## � Conversão Automática Inteligente
-
-### Detecção e Processamento em 2 Etapas
-
-O programa agora detecta automaticamente epsilon-transições e executa as etapas necessárias:
-
-#### Quando clicar "AFN → AFD":
-
-**Se o autômato TEM epsilon-transições:**
-1. ✅ Detecta `ε` no input automaticamente
-2. 📢 Mostra alerta informativo
-3. 🔄 Executa **Etapa 1**: AFN-ε → AFN (remove epsilon)
-4. 🔄 Executa **Etapa 2**: AFN → AFD (determiniza)
-5. 📊 Mostra resultado final (AFD)
-6. 🎯 Muda para abas do AFD automaticamente
-
-**Se o autômato NÃO TEM epsilon:**
-1. ✅ Pula remoção de epsilon
-2. 🔄 Executa apenas AFN → AFD
-3. 📊 Mostra resultado
-4. 🎯 Muda para abas do AFD
-
-#### Validação Inteligente
-
-**"AFN-ε → AFN" bloqueado quando:**
-- ❌ Autômato não possui epsilon-transições
-- 💬 Mostra mensagem: "Use diretamente AFN → AFD"
-- 🛡️ Evita processamento desnecessário
-
-**Vantagens:**
-- ⚡ **Menos cliques**: Um botão faz tudo automaticamente
-- 🧠 **Inteligente**: Detecta o que é necessário
-- 🛡️ **Seguro**: Bloqueia operações inválidas
-- 🎯 **Intuitivo**: Navegação automática de abas
-
-### Navegação Automática de Abas
-
-Após cada conversão bem-sucedida:
-
-**AFN-ε → AFN:**
-- Muda para aba "📊 Resultado AFN"
-- Muda para aba "📊 Diagrama AFN"
-
-**AFN → AFD:**
-- Muda para aba "📊 Resultado AFD"
-- Muda para aba "📊 Diagrama AFD"
-
-**Minimizar AFD:**
-- Muda para aba "📊 AFD Minimizado"
-- Muda para aba "📊 Diagrama MinDFA"
-
-**Benefício:** Você vê imediatamente o resultado sem precisar procurar as abas!
-
----
-
-## �🎯 Conceito Fundamental
+## � Conceito Fundamental
 
 A ideia central é:
 

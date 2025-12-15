@@ -1,0 +1,16 @@
+a b
+q0 q1 q2 q3 q4 trap
+q0
+q2
+q0 a q1
+q0 b trap
+q1 a q2
+q1 b trap
+q2 a q3
+q2 b trap
+q3 a q4
+q3 b trap
+q4 a trap
+q4 b trap
+trap a trap
+trap b trap
