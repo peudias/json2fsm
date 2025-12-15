@@ -23,6 +23,7 @@
 - **ℹ️ Ajuda**
   - [FAQ](faq.md)
   - [Troubleshooting](troubleshooting.md)
+  - [Changelog](CHANGELOG.md)
 
 ---
 
@@ -30,3 +31,5 @@
   - [📂 GitHub](https://github.com/peudias/json2fsm)
   - [🔧 Lazarus IDE](https://www.lazarus-ide.org/)
   - [📘 Free Pascal](https://www.freepascal.org/)
+  - [🧧 Apresentação](GUIA_APRESENTACAO.md)
+  - [🧧 Documentacao](DOCUMENTACAO_CODIGO.md)
