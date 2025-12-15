@@ -5,6 +5,7 @@
 - **📦 Começando**
   - [Instalação](instalacao.md)
   - [Como Usar a Interface](uso.md)
+  - [📄 Formato JSON](json-format.md)
   - [Estrutura do Projeto](estrutura.md)
   - [Tasks do VS Code](tasks.md)
 

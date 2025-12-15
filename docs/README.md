@@ -9,6 +9,23 @@
 
 ## ✨ Principais Recursos
 
+### 🆕 Novidades da Versão 3.1
+
+#### Suporte Completo a JSON
+- ✅ **Colar JSON direto** no editor (recomendado)
+- ✅ **Carregar arquivos .json** da lista ou botão
+- ✅ **JSON preservado** no editor (conversão interna)
+- ✅ **Conversão automática** durante processamento
+- ✅ Suporta epsilon-transições em JSON
+
+#### Conversão Automática Inteligente
+- 🚀 **AFN-ε → AFD em um clique**: Detecta epsilon automaticamente e faz as 2 etapas
+- 🛡️ **Validação inteligente**: Bloqueia operações inválidas (ex: remover epsilon de AFN sem ε)
+- 🎯 **Navegação automática**: Muda para abas corretas após cada conversão
+- ⚡ **Workflow otimizado**: Menos cliques, mais produtividade
+
+### Recursos Principais
+
 - 🎨 **Interface Gráfica Intuitiva** - GUI desenvolvida com Lazarus LCL
 - 📊 **Visualização de Diagramas** - Renderização nativa de AFN-ε, AFN, AFD e AFD Minimizado
 - 🔀 **Remoção de Epsilon** - Conversão de AFN-ε para AFN (sem epsilon-transições)
@@ -17,7 +34,7 @@
 - 📋 **Abas Organizadas** - Resultados separados por tipo (AFN, AFD e AFD Minimizado)
 - 📥 **Usar como Input** - Copie o AFN resultante para continuar o processo
 - 📝 **Logs Detalhados** - Acompanhe cada etapa no terminal
-- 📁 **Casos de Teste** - 11 exemplos incluídos (incluindo 2 com epsilon)
+- 📁 **Casos de Teste** - 11+ exemplos incluídos (TXT e JSON)
 - ⚡ **Performance** - Implementação otimizada em Pascal nativo
 - 🖼️ **Layout Dividido** - Compare entrada, resultado textual e diagramas simultaneamente
 

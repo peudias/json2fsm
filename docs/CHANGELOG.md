@@ -1,5 +1,76 @@
 # 📝 Changelog
 
+## 🎉 Versão 3.1.0 - Suporte a JSON e Conversão Automática Inteligente
+
+**Data:** 16 de Janeiro de 2025
+
+### 🆕 Novas Funcionalidades
+
+#### 📄 Suporte Completo a JSON
+
+**Descrição:** Suporte nativo para entrada em formato JSON com conversão interna automática.
+
+**Formatos aceitos:**
+```json
+{
+  "alfabeto": ["a", "b"],
+  "estados": ["q0", "q1", "q2"],
+  "estadosI": ["q0"],
+  "estadosF": ["q2"],
+  "transicoes": [
+    ["q0", "q1", "a"],
+    ["q1", "q2", "b"]
+  ]
+}
+```
+
+**Características:**
+- ✅ **Carregar arquivos JSON** da lista ou botão
+- ✅ **Colar JSON diretamente** no campo de entrada
+- ✅ **JSON preservado no editor** (conversão apenas interna)
+- ✅ **Suporte a epsilon** (`ε` ou `"epsilon"` em JSON)
+- ✅ **Validação automática** da estrutura JSON
+- 📚 **Documentação completa** em [json-format.md](json-format.md)
+
+#### 🧠 Conversão Automática Inteligente
+
+**Detecção de Epsilon Automática:**
+- Botão "AFN → AFD" detecta epsilon-transições
+- Executa automaticamente as 2 etapas:
+  1. AFN-ε → AFN (remove epsilon)
+  2. AFN → AFD (determiniza)
+- Mostra alerta informativo sobre o processo
+- Um clique faz tudo!
+
+**Validação Inteligente:**
+- Botão "AFN-ε → AFN" bloqueado quando não há epsilon
+- Mensagem: "Use diretamente AFN → AFD"
+- Evita operações desnecessárias
+
+#### 🎯 Navegação Automática de Abas
+
+**Após cada conversão:**
+- AFN-ε → AFN: muda para aba do AFN
+- AFN → AFD: muda para aba do AFD
+- Minimizar: muda para aba do MinDFA
+- Resultado imediatamente visível!
+
+### 🔧 Melhorias
+
+- JSON e TXT coexistem (escolha o formato preferido)
+- Input preservado no formato original
+- Menos cliques para conversões completas
+- Interface mais intuitiva
+
+### 📚 Documentação Atualizada
+
+- Novo arquivo: `json-format.md`
+- Seção JSON em `uso.md`
+- Features em `README.md`
+- Algoritmo em `algoritmo.md`
+
+---
+
 ## 🚀 Versão 3.0.0 - Suporte a Epsilon-Transições
 
 **Data:** 11 de Dezembro de 2024

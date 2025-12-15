@@ -2,6 +2,56 @@
 
 Guia completo da interface gráfica do conversor AFN → AFD.
 
+## 🆕 Suporte a JSON
+
+O programa agora aceita autômatos em **formato JSON**! Você pode usar JSON de 3 formas:
+
+### 1. Carregar arquivo .json da lista
+- Selecione qualquer arquivo `.json` na lista suspensa
+- O JSON é carregado no formato original no editor
+- Conversão para formato interno é automática durante o processamento
+
+### 2. Carregar arquivo .json pelo botão
+- Clique em "Carregar Arquivo"
+- Selecione "Arquivos de autômato (*.txt;*.json)"
+- Escolha um arquivo `.json`
+- JSON aparece no formato original
+
+### 3. Colar JSON diretamente (RECOMENDADO) ✨
+- Copie JSON de qualquer fonte
+- Cole no campo de entrada
+- **O JSON permanece visível** no editor
+- Conversão é feita internamente ao processar
+- Após processar, **JSON original volta automaticamente**
+
+### Formato JSON Aceito
+
+```json
+{
+  "alfabeto": ["a", "b"],
+  "estados": ["q0", "q1", "q2"],
+  "estadosI": ["q0"],
+  "estadosF": ["q2"],
+  "transicoes": [
+    ["q0", "q0", "a"],
+    ["q0", "q0", "b"],
+    ["q0", "q1", "a"],
+    ["q1", "q2", "b"]
+  ]
+}
+```
+
+**Campos:**
+- `alfabeto`: Array de strings com símbolos
+- `estados`: Array de strings com estados
+- `estadosI`: Array de strings com estados iniciais
+- `estadosF`: Array de strings com estados finais
+- `transicoes`: Array de arrays `[origem, destino, simbolo]`
+
+**Epsilon-transições:** Use `"ε"` no alfabeto e transições
+
+📖 [Veja documentação completa sobre JSON](json-format.md)
+
 ## 🖼️ Visão Geral da Interface
 
 A janela é dividida em **duas áreas principais**:

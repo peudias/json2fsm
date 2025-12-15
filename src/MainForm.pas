@@ -22,7 +22,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
-  Buttons, Math, ComCtrls;
+  Buttons, Math, ComCtrls, fpjson, jsonparser;
 
 type
   {****************************************************************************
@@ -230,6 +230,26 @@ type
      * Carrega o arquivo automaticamente no editor de entrada.
      *}
     procedure OnTestFileSelected(Sender: TObject);
+    
+    {**
+     * ConvertJSONToText - Converte arquivo JSON para formato TXT
+     * 
+     * Parâmetro:
+     *   JSONFilePath: Caminho completo do arquivo JSON
+     * 
+     * Retorno: String no formato TXT aceito pelo programa
+     *}
+    function ConvertJSONToText(const JSONFilePath: string): string;
+    
+    {**
+     * ConvertJSONTextToText - Converte string JSON para formato TXT
+     * 
+     * Parâmetro:
+     *   JSONText: Conteúdo JSON em texto
+     * 
+     * Retorno: String no formato TXT aceito pelo programa
+     *}
+    function ConvertJSONTextToText(const JSONText: string): string;
     
     {**
      * DrawAutomaton - Desenha o diagrama de um autômato em um TCanvas
@@ -568,7 +588,23 @@ begin
   if DirectoryExists(testPath) then
   begin
     WriteLn('[GUI] Carregando arquivos de teste de: ', testPath);
+    
+    // Carregar arquivos .txt
     if FindFirst(testPath + '*.txt', faAnyFile, searchRec) = 0 then
+    begin
+      repeat
+        if (searchRec.Name <> '.') and (searchRec.Name <> '..') then
+        begin
+          fileName := ExtractFileName(searchRec.Name);
+          cmbTestFiles.Items.AddObject(fileName, TObject(PtrInt(cmbTestFiles.Items.Count)));
+          WriteLn('[GUI] Encontrado: ', fileName);
+        end;
+      until FindNext(searchRec) <> 0;
+      FindClose(searchRec);
+    end;
+    
+    // Carregar arquivos .json
+    if FindFirst(testPath + '*.json', faAnyFile, searchRec) = 0 then
     begin
       repeat
         if (searchRec.Name <> '.') and (searchRec.Name <> '..') then
@@ -589,7 +625,7 @@ end;
 
 procedure TFormMain.OnTestFileSelected(Sender: TObject);
 var
-  testPath, fullPath: string;
+  testPath, fullPath, convertedText: string;
 begin
   if (cmbTestFiles.ItemIndex > 0) and (cmbTestFiles.ItemIndex < cmbTestFiles.Items.Count) then
   begin
@@ -603,9 +639,14 @@ begin
     begin
       WriteLn('[GUI] Carregando arquivo de teste: ', fullPath);
       try
+        // Carregar arquivo (JSON ou TXT) no formato original
         memoInput.Lines.LoadFromFile(fullPath);
         edtFilePath.Text := fullPath;
-        WriteLn('[GUI] Arquivo de teste carregado: ', memoInput.Lines.Count, ' linhas');
+        
+        if LowerCase(ExtractFileExt(fullPath)) = '.json' then
+          WriteLn('[GUI] Arquivo JSON carregado: ', memoInput.Lines.Count, ' linhas')
+        else
+          WriteLn('[GUI] Arquivo de teste carregado: ', memoInput.Lines.Count, ' linhas');
       except
         on E: Exception do
         begin
@@ -616,6 +657,248 @@ begin
     end
     else
       WriteLn('[ERRO] Arquivo nao encontrado: ', fullPath);
+  end;
+end;
+
+{******************************************************************************
+ * ConvertJSONToText - Converte arquivo JSON para formato TXT aceito
+ * 
+ * FORMATO JSON ESPERADO:
+ * - alfabeto: array de strings com símbolos
+ * - estados: array de strings com estados
+ * - estadosI: array de strings com estados iniciais
+ * - estadosF: array de strings com estados finais
+ * - transicoes: array de arrays [origem, destino, simbolo]
+ * 
+ * FORMATO TXT DE SAÍDA:
+ * Linha 1: alfabeto separado por espaços
+ * Linha 2: estados separados por espaços
+ * Linha 3: estados iniciais separados por espaços
+ * Linha 4: estados finais separados por espaços
+ * Linhas seguintes: origem símbolo destino
+ ******************************************************************************}
+function TFormMain.ConvertJSONToText(const JSONFilePath: string): string;
+var
+  JSONData: TJSONData;
+  JSONObject: TJSONObject;
+  JSONArray: TJSONArray;
+  FileContent: string;
+  i: Integer;
+  alfabeto, estados, iniciais, finais: string;
+  trans: TJSONArray;
+begin
+  Result := '';
+  
+  try
+    // Ler arquivo JSON
+    with TStringList.Create do
+    try
+      LoadFromFile(JSONFilePath);
+      FileContent := Text;
+    finally
+      Free;
+    end;
+    
+    // Parsear JSON
+    JSONData := GetJSON(FileContent);
+    try
+      if not (JSONData is TJSONObject) then
+        raise Exception.Create('JSON inválido: esperado objeto raiz');
+      
+      JSONObject := TJSONObject(JSONData);
+      
+      // Extrair alfabeto
+      alfabeto := '';
+      if JSONObject.Find('alfabeto') <> nil then
+      begin
+        JSONArray := JSONObject.Arrays['alfabeto'];
+        for i := 0 to JSONArray.Count - 1 do
+        begin
+          if i > 0 then alfabeto += ' ';
+          alfabeto += JSONArray.Strings[i];
+        end;
+      end;
+      
+      // Extrair estados
+      estados := '';
+      if JSONObject.Find('estados') <> nil then
+      begin
+        JSONArray := JSONObject.Arrays['estados'];
+        for i := 0 to JSONArray.Count - 1 do
+        begin
+          if i > 0 then estados += ' ';
+          estados += JSONArray.Strings[i];
+        end;
+      end;
+      
+      // Extrair estados iniciais
+      iniciais := '';
+      if JSONObject.Find('estadosI') <> nil then
+      begin
+        JSONArray := JSONObject.Arrays['estadosI'];
+        for i := 0 to JSONArray.Count - 1 do
+        begin
+          if i > 0 then iniciais += ' ';
+          iniciais += JSONArray.Strings[i];
+        end;
+      end;
+      
+      // Extrair estados finais
+      finais := '';
+      if JSONObject.Find('estadosF') <> nil then
+      begin
+        JSONArray := JSONObject.Arrays['estadosF'];
+        for i := 0 to JSONArray.Count - 1 do
+        begin
+          if i > 0 then finais += ' ';
+          finais += JSONArray.Strings[i];
+        end;
+      end;
+      
+      // Construir resultado
+      Result := alfabeto + LineEnding +
+                estados + LineEnding +
+                iniciais + LineEnding +
+                finais + LineEnding;
+      
+      // Extrair transições
+      if JSONObject.Find('transicoes') <> nil then
+      begin
+        JSONArray := JSONObject.Arrays['transicoes'];
+        for i := 0 to JSONArray.Count - 1 do
+        begin
+          trans := JSONArray.Arrays[i];
+          if trans.Count >= 3 then
+          begin
+            // Formato JSON: [origem, destino, simbolo]
+            // Formato TXT: origem simbolo destino
+            Result += trans.Strings[0] + ' ' + trans.Strings[2] + ' ' + trans.Strings[1] + LineEnding;
+          end;
+        end;
+      end;
+      
+    finally
+      JSONData.Free;
+    end;
+    
+  except
+    on E: Exception do
+    begin
+      WriteLn('[ERRO] Falha ao converter JSON: ', E.Message);
+      raise Exception.Create('Erro ao converter JSON: ' + E.Message);
+    end;
+  end;
+end;
+
+{******************************************************************************
+ * ConvertJSONTextToText - Converte string JSON para formato TXT aceito
+ * 
+ * Diferença de ConvertJSONToText:
+ * - ConvertJSONToText: Lê de arquivo
+ * - ConvertJSONTextToText: Recebe string direta (input manual)
+ * 
+ * FORMATO: Mesmo que ConvertJSONToText (veja documentação acima)
+ ******************************************************************************}
+function TFormMain.ConvertJSONTextToText(const JSONText: string): string;
+var
+  JSONData: TJSONData;
+  JSONObject: TJSONObject;
+  JSONArray: TJSONArray;
+  i: Integer;
+  alfabeto, estados, iniciais, finais: string;
+  trans: TJSONArray;
+begin
+  Result := '';
+  
+  try
+    // Parsear JSON diretamente do texto
+    JSONData := GetJSON(JSONText);
+    try
+      if not (JSONData is TJSONObject) then
+        raise Exception.Create('JSON inválido: esperado objeto raiz');
+      
+      JSONObject := TJSONObject(JSONData);
+      
+      // Extrair alfabeto
+      alfabeto := '';
+      if JSONObject.Find('alfabeto') <> nil then
+      begin
+        JSONArray := JSONObject.Arrays['alfabeto'];
+        for i := 0 to JSONArray.Count - 1 do
+        begin
+          if i > 0 then alfabeto += ' ';
+          alfabeto += JSONArray.Strings[i];
+        end;
+      end;
+      
+      // Extrair estados
+      estados := '';
+      if JSONObject.Find('estados') <> nil then
+      begin
+        JSONArray := JSONObject.Arrays['estados'];
+        for i := 0 to JSONArray.Count - 1 do
+        begin
+          if i > 0 then estados += ' ';
+          estados += JSONArray.Strings[i];
+        end;
+      end;
+      
+      // Extrair estados iniciais
+      iniciais := '';
+      if JSONObject.Find('estadosI') <> nil then
+      begin
+        JSONArray := JSONObject.Arrays['estadosI'];
+        for i := 0 to JSONArray.Count - 1 do
+        begin
+          if i > 0 then iniciais += ' ';
+          iniciais += JSONArray.Strings[i];
+        end;
+      end;
+      
+      // Extrair estados finais
+      finais := '';
+      if JSONObject.Find('estadosF') <> nil then
+      begin
+        JSONArray := JSONObject.Arrays['estadosF'];
+        for i := 0 to JSONArray.Count - 1 do
+        begin
+          if i > 0 then finais += ' ';
+          finais += JSONArray.Strings[i];
+        end;
+      end;
+      
+      // Construir resultado
+      Result := alfabeto + LineEnding +
+                estados + LineEnding +
+                iniciais + LineEnding +
+                finais + LineEnding;
+      
+      // Extrair transições
+      if JSONObject.Find('transicoes') <> nil then
+      begin
+        JSONArray := JSONObject.Arrays['transicoes'];
+        for i := 0 to JSONArray.Count - 1 do
+        begin
+          trans := JSONArray.Arrays[i];
+          if trans.Count >= 3 then
+          begin
+            // Formato JSON: [origem, destino, simbolo]
+            // Formato TXT: origem simbolo destino
+            Result += trans.Strings[0] + ' ' + trans.Strings[2] + ' ' + trans.Strings[1] + LineEnding;
+          end;
+        end;
+      end;
+      
+    finally
+      JSONData.Free;
+    end;
+    
+  except
+    on E: Exception do
+    begin
+      WriteLn('[ERRO] Falha ao converter JSON do texto: ', E.Message);
+      raise Exception.Create('Erro ao converter JSON: ' + E.Message);
+    end;
   end;
 end;
 
@@ -812,6 +1095,7 @@ begin
    * Formato visual no diálogo:
    *   ┌─ Tipo de arquivo: ────────┐
    *   │ Arquivos de texto (*.txt) │
+   *   │ Arquivos JSON (*.json)    │
    *   │ Todos os arquivos (*.*)   │
    *   └───────────────────────────┘
    * 
@@ -819,7 +1103,7 @@ begin
    * Se usuário digitar "teste" → salva como "teste.txt"
    * Se usuário digitar "teste.txt" → mantém "teste.txt"
    **}
-  OpenDialog.Filter := 'Arquivos de texto (*.txt)|*.txt|Todos os arquivos (*.*)|*.*';
+  OpenDialog.Filter := 'Arquivos de autômato (*.txt;*.json)|*.txt;*.json|Arquivos de texto (*.txt)|*.txt|Arquivos JSON (*.json)|*.json|Todos os arquivos (*.*)|*.*';
   OpenDialog.DefaultExt := 'txt';
   
   {**
@@ -849,16 +1133,18 @@ begin
      * try-except: Captura erros de I/O durante leitura
      * 
      * OPERAÇÕES PROTEGIDAS:
-     * 1. LoadFromFile: Pode falhar se:
+     * 1. Verificar extensão do arquivo (JSON ou TXT)
+     * 2. Se JSON: Converter para formato TXT automaticamente
+     * 3. LoadFromFile: Pode falhar se:
      *    - Arquivo foi deletado após seleção
      *    - Sem permissão de leitura
      *    - Arquivo travado por outro processo
      *    - Arquivo corrompido
      *    - Sem espaço em memória
      * 
-     * 2. Atualizar edtFilePath: Mostra caminho ao usuário
+     * 4. Atualizar edtFilePath: Mostra caminho ao usuário
      * 
-     * 3. Logar contagem de linhas: Validação básica
+     * 5. Logar contagem de linhas: Validação básica
      * 
      * Se exceção ocorrer:
      * - Logar no console (debugging)
@@ -867,6 +1153,7 @@ begin
      * - memoInput mantém conteúdo anterior (transação atômica)
      **}
     try
+      // Carregar arquivo (JSON ou TXT) no formato original
       memoInput.Lines.LoadFromFile(OpenDialog.FileName);
       edtFilePath.Text := OpenDialog.FileName;
       WriteLn('[GUI] Arquivo carregado: ', memoInput.Lines.Count, ' linhas');
@@ -1145,8 +1432,57 @@ end;
  * 5. Diagrama visual em PaintBoxNFA
  **}
 procedure TFormMain.btnRemoveEpsilonClick(Sender: TObject);
+var
+  inputText, originalText, convertedText: string;
+  wasJSON: Boolean;
 begin
   WriteLn('[GUI] Iniciando remocao de epsilon-transicoes...');
+  
+  {**
+   * DETECTAR E CONVERTER JSON INTERNO
+   * Se JSON, converter temporariamente mas manter JSON visível no editor
+   *}
+  inputText := Trim(memoInput.Lines.Text);
+  wasJSON := (Length(inputText) > 0) and (inputText[1] = '{');
+  
+  if wasJSON then
+  begin
+    WriteLn('[GUI] Detectado JSON no input, convertendo internamente...');
+    try
+      originalText := memoInput.Lines.Text;  // Salvar JSON original
+      convertedText := ConvertJSONTextToText(inputText);
+      memoInput.Lines.Text := convertedText;  // Converter temporariamente
+      edtFilePath.Text := '(JSON do editor)';
+      WriteLn('[GUI] JSON convertido internamente!');
+    except
+      on E: Exception do
+      begin
+        WriteLn('[ERRO] Falha ao converter JSON: ', E.Message);
+        ShowMessage('Erro ao converter JSON do editor: ' + E.Message);
+        Exit;
+      end;
+    end;
+  end;
+  
+  {**
+   * VERIFICAR SE HÁ EPSILON-TRANSIÇÕES
+   * Bloquear processamento se não há epsilon no autômato
+   **}
+  if (memoInput.Lines.Count > 0) and 
+     (Pos('ε', memoInput.Lines.Text) = 0) and 
+     (Pos('epsilon', memoInput.Lines.Text) = 0) then
+  begin
+    WriteLn('[GUI] Nenhuma epsilon-transicao detectada.');
+    ShowMessage('Este autômato NÃO possui epsilon-transições!' + LineEnding + LineEnding +
+                'O botão "AFN-ε → AFN" só deve ser usado quando há transições-ε.' + LineEnding +
+                'Use diretamente "AFN → AFD" para converter este autômato.');
+    
+    // Restaurar JSON original se foi convertido
+    if wasJSON then
+      memoInput.Lines.Text := originalText;
+    
+    Exit;  // Não processar
+  end;
   
   {**
    * INVOCAR ALGORITMO COM PROTEÇÃO DE EXCEÇÕES
@@ -1180,10 +1516,22 @@ begin
      * - Pode lançar Exception se falhar
      **}
     RemoveEpsilonTransitions;
+    
+    // Restaurar JSON original no editor se foi convertido
+    if wasJSON then
+    begin
+      memoInput.Lines.Text := originalText;
+      WriteLn('[GUI] JSON original restaurado no editor');
+    end;
+    
     WriteLn('[GUI] Remocao de epsilon concluida com sucesso!');
   except
     on E: Exception do
     begin
+      // Restaurar JSON original mesmo em caso de erro
+      if wasJSON then
+        memoInput.Lines.Text := originalText;
+      
       {**
        * TRATAMENTO DE ERRO
        * 
@@ -1476,11 +1824,44 @@ end;
  * 6. Botão "Minimizar AFD" fica disponível
  **}
 procedure TFormMain.btnConvertClick(Sender: TObject);
+var
+  inputText, originalText, convertedText: string;
+  wasJSON: Boolean;
+  i: Integer;
 begin
   WriteLn('[GUI] Iniciando conversao AFN -> AFD...');
   
   {**
+   * DETECTAR E CONVERTER JSON INTERNO
+   * Se JSON, converter temporariamente mas manter JSON visível no editor
+   *}
+  inputText := Trim(memoInput.Lines.Text);
+  wasJSON := (Length(inputText) > 0) and (inputText[1] = '{');
+  
+  if wasJSON then
+  begin
+    WriteLn('[GUI] Detectado JSON no input, convertendo internamente...');
+    try
+      originalText := memoInput.Lines.Text;  // Salvar JSON original
+      convertedText := ConvertJSONTextToText(inputText);
+      memoInput.Lines.Text := convertedText;  // Converter temporariamente
+      edtFilePath.Text := '(JSON do editor)';
+      WriteLn('[GUI] JSON convertido internamente!');
+    except
+      on E: Exception do
+      begin
+        WriteLn('[ERRO] Falha ao converter JSON: ', E.Message);
+        ShowMessage('Erro ao converter JSON do editor: ' + E.Message);
+        Exit;
+      end;
+    end;
+  end;
+  
+  {**
    * INVOCAR ALGORITMO COM PROTEÇÃO DE EXCEÇÕES
+   * 
+   * DETECÇÃO AUTOMÁTICA DE EPSILON:
+   * Se o autômato tem epsilon-transições, fazer AFN-ε → AFN → AFD automaticamente
    * 
    * try-except: Captura erros durante processamento
    * 
@@ -1501,6 +1882,39 @@ begin
    **}
   try
     {**
+     * VERIFICAR SE HÁ EPSILON-TRANSIÇÕES
+     * Se detectar 'ε' no alfabeto ou nas transições, processar AFN-ε primeiro
+     **}
+    if (memoInput.Lines.Count > 0) and 
+       ((Pos('ε', memoInput.Lines.Text) > 0) or (Pos('epsilon', memoInput.Lines.Text) > 0)) then
+    begin
+      WriteLn('[GUI] Detectado AFN-ε. Executando AFN-ε → AFN → AFD automaticamente...');
+      ShowMessage('Detectado autômato com epsilon-transições!' + LineEnding +
+                  'Serão executadas duas etapas automaticamente:' + LineEnding +
+                  '1. AFN-ε → AFN (remover epsilon)' + LineEnding +
+                  '2. AFN → AFD (determinização)');
+      
+      // ETAPA 1: Remover epsilon-transições
+      WriteLn('[GUI] Etapa 1/2: Removendo epsilon-transições...');
+      RemoveEpsilonTransitions;
+      
+      // Copiar resultado do AFN para o input (internamente)
+      WriteLn('[GUI] Copiando AFN para processamento...');
+      memoInput.Lines.Clear;
+      memoInput.Lines.Add(NFAAlphabet.CommaText.Replace(',', ' '));
+      memoInput.Lines.Add(NFAStates.CommaText.Replace(',', ' '));
+      memoInput.Lines.Add(NFAInitials.CommaText.Replace(',', ' '));
+      memoInput.Lines.Add(NFAFinals.CommaText.Replace(',', ' '));
+      for i := 0 to High(NFATransitions) do
+        memoInput.Lines.Add(NFATransitions[i].FromState + ' ' + 
+                           NFATransitions[i].Symbol + ' ' + 
+                           NFATransitions[i].ToState);
+      
+      // ETAPA 2: Converter AFN para AFD
+      WriteLn('[GUI] Etapa 2/2: Convertendo AFN → AFD...');
+    end;
+    
+    {**
      * CHAMAR ALGORITMO DE DETERMINIZAÇÃO
      * 
      * ConvertAFNtoAFD: Procedure definida anteriormente
@@ -1513,10 +1927,28 @@ begin
      * - Pode lançar Exception se falhar
      **}
     ConvertAFNtoAFD;
+    
+    // Restaurar JSON original no editor se foi convertido
+    if wasJSON then
+    begin
+      memoInput.Lines.Text := originalText;
+      WriteLn('[GUI] JSON original restaurado no editor');
+    end;
+    
+    // Mudar para abas do AFD
+    if Assigned(PageControl2) then
+      PageControl2.ActivePage := TabOutput;
+    if Assigned(PageControl1) then
+      PageControl1.ActivePage := TabDFA;
+    
     WriteLn('[GUI] Conversao concluida com sucesso!');
   except
     on E: Exception do
     begin
+      // Restaurar JSON original mesmo em caso de erro
+      if wasJSON then
+        memoInput.Lines.Text := originalText;
+      
       {**
        * TRATAMENTO DE ERRO
        * 
