@@ -2485,11 +2485,28 @@ begin
     {**
      * Aviso se não detectamos epsilon-transições
      * 
-     * Se hasEpsilon = False, significa que o alfabeto não contém
-     * nenhum símbolo epsilon reconhecido.
+     * VERIFICAÇÃO EM DUAS ETAPAS:
+     * 1. Checamos se epsilon está no alfabeto (hasEpsilon)
+     * 2. Checamos se epsilon aparece nas transições
+     * 
+     * Se encontramos epsilon nas transições mas não no alfabeto,
+     * marcamos hasEpsilon = True (isso é válido, epsilon não precisa estar no alfabeto!)
      * 
      * Mesmo assim, continuamos com a conversão (pode ser AFN comum).
      **}
+    // Verificar se epsilon aparece nas transições (mesmo que não esteja no alfabeto)
+    for i := 0 to High(Transitions) do
+    begin
+      if (Transitions[i].Symbol = 'ε') or 
+         (Transitions[i].Symbol = 'epsilon') or 
+         (Transitions[i].Symbol = 'e') or 
+         (Transitions[i].Symbol = '&') then
+      begin
+        hasEpsilon := True;
+        Break;
+      end;
+    end;
+    
     if not hasEpsilon then
     begin
       ShowMessage('Aviso: O autômato não possui epsilon-transições!' + LineEnding +
@@ -3938,6 +3955,7 @@ var
   trans: TTransition;
   mappedState, mappedDest: string;
   oldInitialPartition: Integer;
+  destPart1, destPart2: Integer;  // Partições dos destinos das transições
 begin
   {** Validação: Verificar se há AFD para minimizar **}
   if not Assigned(DFAStates) or (DFAStates.Count = 0) then
@@ -4125,10 +4143,10 @@ begin
               {** Verificar se destinos estão na mesma partição **}
               if (dest1 <> '') and (dest2 <> '') then
               begin
-                partIdx2 := statePartition[DFAStates.IndexOf(dest1)];
-                m := statePartition[DFAStates.IndexOf(dest2)];
+                destPart1 := statePartition[DFAStates.IndexOf(dest1)];
+                destPart2 := statePartition[DFAStates.IndexOf(dest2)];
                 
-                if partIdx2 <> m then
+                if destPart1 <> destPart2 then
                 begin
                   equiv := False;
                   Break;
