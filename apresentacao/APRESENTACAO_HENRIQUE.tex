@@ -1,0 +1,1425 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[brazil]{babel}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+
+\geometry{margin=2.5cm}
+\setlength{\headheight}{14.5pt}
+
+% Configuracao de sintaxe Pascal (comentarios estilo (* *))
+\lstdefinestyle{pascal}{
+    language=Pascal,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{green!60!black}\itshape,
+    stringstyle=\color{red},
+    morecomment=[s]{(*}{*)},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=5,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!5},
+    xleftmargin=15pt,
+    framexleftmargin=15pt
+}
+
+\usetikzlibrary{automata,positioning,arrows.meta,shapes}
+
+\title{\textbf{Conversor AFN para AFD}\\
+\Large Estruturas de Dados e Algoritmo Principal\\
+\large Documentacao Tecnica - Henrique}
+\author{Henrique Freitas}
+\date{Dezembro 2025}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Conversor AFN para AFD}
+\fancyhead[R]{Henrique - Estruturas e Conversao}
+\fancyfoot[C]{\thepage}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Introducao}
+
+Este documento detalha as secoes do codigo \texttt{MainForm.pas} sob responsabilidade de \textbf{Henrique}:
+
+\begin{itemize}
+    \item \textbf{Parte 1:} Linhas 1-2254 (Estruturas de Dados, Interface, Parsing)
+    \item \textbf{Parte 2:} Linhas 2959-3795 (Algoritmo AFN para AFD)
+\end{itemize}
+
+\subsection{Visao Geral do Projeto}
+
+O projeto implementa um conversor completo de automatos finitos:
+\begin{enumerate}
+    \item \textbf{AFN-$\varepsilon$} (com epsilon) para \textbf{AFN} (sem epsilon)
+    \item \textbf{AFN} (nao-deterministico) para \textbf{AFD} (deterministico)
+    \item \textbf{AFD} para \textbf{AFD Minimizado}
+\end{enumerate}
+
+\textbf{Tecnologia:} Free Pascal + Lazarus (GUI nativa)
+
+\newpage
+\section{Parte 1: Estruturas de Dados e Interface (L1-2254)}
+
+\subsection{Visao Geral da Parte 1}
+
+A Parte 1 contem:
+\begin{itemize}
+    \item Tipos fundamentais (TTransition, TTransitionArray)
+    \item Classe TStringSet (L299-475)
+    \item Variaveis globais (L135-150)
+    \item FormCreate - Inicializacao (L488-571)
+    \item LoadTestFiles - Scan de arquivos (L586-643)
+    \item OnTestFileSelected - Handler ComboBox (L645-679)
+    \item ConvertJSONToText - Parse arquivo JSON (L693-812)
+    \item ConvertJSONTextToText - Parse string JSON (L829-918)
+    \item LoadSampleFile - Exemplo padrao (L952-1043)
+    \item btnLoadFileClick - Carregar arquivo (L1085-1170)
+    \item btnClearClick - Limpar interface (L1237-1360)
+    \item btnRemoveEpsilonClick - Handler epsilon (L1395-1566)
+    \item btnUseAsInputClick - Copiar resultado (L1603-1720)
+    \item btnConvertClick - Handler conversao (L1863-2068)
+\end{itemize}
+
+\subsection{Tipos Fundamentais (L39-50)}
+
+\subsubsection{TTransition - Record de Transicao (L39-43)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 39-43
+
+\begin{lstlisting}[style=pascal, caption={Definicao de TTransition}]
+TTransition = record
+  FromState: string;  (* Estado de origem *)
+  Symbol: string;     (* Simbolo da transicao *)
+  ToState: string;    (* Estado de destino *)
+end;
+\end{lstlisting}
+
+\textbf{Explicacao:}
+\begin{itemize}
+    \item Representa uma transicao: $\delta(q_i, a) = q_j$
+    \item \texttt{FromState} = $q_i$, \texttt{Symbol} = $a$, \texttt{ToState} = $q_j$
+\end{itemize}
+
+\subsubsection{TTransitionArray - Array Dinamico (L49)}
+
+\begin{lstlisting}[style=pascal]
+TTransitionArray = array of TTransition;
+\end{lstlisting}
+
+Array dinamico que armazena todas as transicoes do automato.
+
+\subsection{Classe TFormMain - Formulario Principal (L50-134)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 50-134
+
+\subsubsection{Declaracao da Classe (L76-130)}
+
+A classe \texttt{TFormMain} herda de \texttt{TForm} e gerencia toda a interface grafica:
+
+\textbf{Componentes Visuais:}
+\begin{itemize}
+    \item \textbf{Botoes:} btnConvert, btnLoadFile, btnClear, btnMinimize, btnRemoveEpsilon, btnUseAsInput
+    \item \textbf{Editores de texto:} memoInput, memoOutput, memoNFAOutput, memoMinOutput
+    \item \textbf{Paineis de desenho:} PaintBoxEpsilonNFA, PaintBoxNFA, PaintBoxDFA, PaintBoxMinDFA
+    \item \textbf{Abas:} TabEpsilonNFA, TabNFA, TabDFA, TabMinDFA
+    \item \textbf{Dialogo:} OpenDialog (para selecionar arquivos)
+\end{itemize}
+
+\textbf{Event Handlers:}
+\begin{itemize}
+    \item btnClearClick - Limpar interface
+    \item btnConvertClick - Converter AFN para AFD
+    \item btnLoadFileClick - Carregar arquivo
+    \item btnMinimizeClick - Minimizar AFD
+    \item btnRemoveEpsilonClick - Remover epsilon-transicoes
+    \item btnUseAsInputClick - Copiar resultado para entrada
+    \item FormCreate - Inicializacao do formulario
+    \item PaintBoxXXXPaint - Desenhar diagramas
+\end{itemize}
+
+\subsection{Variaveis Globais dos Automatos (L135-165)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 135-165
+
+\begin{lstlisting}[style=pascal, caption={Variaveis Globais}]
+(* AFN-epsilon: entrada original *)
+EpsilonNFAAlphabet, EpsilonNFAStates: TStringList;
+EpsilonNFAInitials, EpsilonNFAFinals: TStringList;
+EpsilonNFATransitions: TTransitionArray;
+
+(* AFN: sem epsilon *)
+NFAAlphabet, NFAStates, NFAInitials, NFAFinals: TStringList;
+NFATransitions: TTransitionArray;
+
+(* AFD: deterministico *)
+DFAStates, DFAFinals: TStringList;
+DFAInitial: string;  (* AFD tem apenas UM inicial *)
+DFATransitions: TTransitionArray;
+
+(* AFD Minimizado *)
+MinDFAStates, MinDFAFinals: TStringList;
+MinDFAInitial: string;
+MinDFATransitions: TTransitionArray;
+\end{lstlisting}
+
+\subsection{Declaracoes de Metodos Privados (L166-298)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 166-298
+
+A secao privada da classe declara os metodos principais de conversao:
+
+\subsubsection{RemoveEpsilonTransitions (L174)}
+
+\textbf{Proposito:} Remove epsilon-transicoes de um AFN-$\varepsilon$
+
+\textbf{Algoritmo:}
+\begin{enumerate}
+    \item Calcula epsilon-fecho ($\varepsilon$-closure) de cada estado
+    \item Para cada estado e simbolo, adiciona transicoes para todos destinos alcancaveis
+    \item Ajusta estados finais (estado e final se seu $\varepsilon$-fecho contem algum final)
+\end{enumerate}
+
+\textbf{Complexidade:} $O(n^2 \cdot m)$ onde $n$ = estados, $m$ = transicoes
+
+\subsubsection{ConvertAFNtoAFD (L190)}
+
+\textbf{Proposito:} Converte AFN em AFD usando construcao de subconjuntos
+
+\textbf{Algoritmo (Subset Construction):}
+\begin{enumerate}
+    \item Estado inicial do AFD = conjunto dos estados iniciais do AFN
+    \item Para cada estado do AFD (conjunto de estados do AFN):
+    \begin{itemize}
+        \item Para cada simbolo do alfabeto:
+        \item Calcula conjunto de estados alcancaveis
+        \item Cria novo estado do AFD se necessario
+        \item Adiciona transicao
+    \end{itemize}
+    \item Estado do AFD e final se contem algum estado final do AFN
+\end{enumerate}
+
+\textbf{Complexidade:} $O(2^n \cdot |\Sigma|)$ no pior caso (explosao exponencial)
+
+\subsubsection{MinimizeDFA (L207)}
+
+\textbf{Proposito:} Minimiza um AFD usando algoritmo de Myhill-Nerode
+
+\textbf{Algoritmo (Particao-Refinamento):}
+\begin{enumerate}
+    \item Particao inicial: (finais, nao-finais)
+    \item Repetir ate nao haver mudancas:
+    \begin{itemize}
+        \item Para cada particao P e simbolo a:
+        \item Se estados de P vao para particoes diferentes com 'a', divide P
+    \end{itemize}
+    \item Cada particao final vira um estado do MinDFA
+\end{enumerate}
+
+\textbf{Complexidade:} $O(n \cdot m \cdot \log n)$ onde $n$ = estados, $m$ = transicoes
+
+\subsubsection{Metodos Auxiliares (L222-298)}
+
+\textbf{LoadSampleFile:} Carrega arquivo de exemplo \texttt{sample\_afn.txt}
+
+\textbf{LoadTestFiles:} Popula ComboBox com arquivos do diretorio \texttt{testes/}
+
+\textbf{OnTestFileSelected:} Handler para selecao de arquivo de teste
+
+\textbf{ConvertJSONToText:} Converte arquivo JSON para formato TXT
+
+\textbf{ConvertJSONTextToText:} Converte string JSON para formato TXT
+
+\textbf{DrawAutomaton:} Desenha diagrama de automato em TCanvas
+\begin{itemize}
+    \item Layout: 4 estados por linha
+    \item Espacamento: 100px horizontal, 80px vertical
+    \item Estados: circulos de raio 20px
+    \item Estados finais: circulo duplo com fundo amarelo
+    \item Transicoes: linhas com setas e rotulos
+\end{itemize}
+
+\subsection{TStringSet - Classe de Conjuntos (L299-475)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 299-475
+
+\subsubsection{Declaracao da Classe (L299-311)}
+
+\begin{lstlisting}[style=pascal, caption={Classe TStringSet}]
+TStringSet = class
+  private
+    FList: TStringList;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Add(const s: string);
+    function Contains(const s: string): Boolean;
+    function ToString: string; override;
+    function Clone: TStringSet;
+    function IsEmpty: Boolean;
+    function Count: Integer;
+    function Item(i: Integer): string;
+end;
+\end{lstlisting}
+
+\textbf{Por Que TStringSet?}
+
+Construcao de subconjuntos gera muitos conjuntos de estados. Precisamos evitar duplicatas. TStringList com \texttt{Duplicates := dupIgnore} resolve!
+
+\subsubsection{Implementacao dos Metodos (L333-475)}
+
+\textbf{Create (L333-337):} Inicializa com Sorted=True e Duplicates=dupIgnore
+
+\textbf{Destroy (L339-343):} Libera FList
+
+\textbf{Add (L360-367):} Adiciona elemento (ignora duplicatas automaticamente)
+
+\textbf{Contains (L377-381):} Verifica se elemento existe (O(log n) com busca binaria)
+
+\textbf{Clone (L398-410):} Cria copia independente do conjunto
+
+\textbf{ToString (L431-445):} Retorna formato "\{q0,q1,q2\}"
+
+\textbf{IsEmpty (L414-418):} Verifica se conjunto vazio
+
+\textbf{Count (L449-453):} Retorna numero de elementos
+
+\textbf{Item (L464-475):} Acessa elemento por indice
+
+\subsection{Inicializacao da Interface (L488-571)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 488-571
+
+\begin{lstlisting}[style=pascal, caption={FormCreate}]
+procedure TFormMain.FormCreate(Sender: TObject);
+begin
+  (* Criar listas para alfabeto, estados, etc. *)
+  NFAAlphabet := TStringList.Create;
+  NFAStates := TStringList.Create;
+  NFAInitials := TStringList.Create;
+  NFAFinals := TStringList.Create;
+  DFAStates := TStringList.Create;
+  DFAFinals := TStringList.Create;
+  MinDFAStates := TStringList.Create;
+  MinDFAFinals := TStringList.Create;
+  
+  (* Carregar arquivos de teste *)
+  LoadTestFiles;
+  LoadSampleFile;
+end;
+\end{lstlisting}
+
+\subsection{Parser JSON para TXT (L693-918)}
+
+O sistema aceita dois formatos: TXT e JSON. Duas funcoes realizam a conversao:
+
+\begin{itemize}
+    \item \textbf{ConvertJSONToText} (L693-812): Le arquivo JSON do disco
+    \item \textbf{ConvertJSONTextToText} (L829-918): Converte string JSON direta
+\end{itemize}
+
+\subsection{LoadSampleFile - Exemplo Padrao (L952-1043)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 952-1043
+
+Carrega arquivo sample\_afn.txt se existir, senao cria exemplo hardcoded. O exemplo padrao e um AFN que aceita strings terminadas em "ab".
+
+\subsection{btnLoadFileClick - Carregar Arquivo (L1085-1170)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 1085-1170
+
+Event handler do botao "Carregar Arquivo". Abre dialogo nativo (TOpenDialog) para selecionar arquivo .txt ou .json do sistema de arquivos.
+
+\begin{lstlisting}[style=pascal, caption={btnLoadFileClick}]
+procedure TFormMain.btnLoadFileClick(Sender: TObject);
+begin
+  OpenDialog.Filter := 'Arquivos de automato (*.txt;*.json)|...';
+  OpenDialog.DefaultExt := 'txt';
+  
+  if OpenDialog.Execute then
+  begin
+    try
+      memoInput.Lines.LoadFromFile(OpenDialog.FileName);
+      edtFilePath.Text := OpenDialog.FileName;
+    except
+      on E: Exception do
+        ShowMessage('Erro ao carregar arquivo: ' + E.Message);
+    end;
+  end;
+end;
+\end{lstlisting}
+
+\subsection{btnClearClick - Limpar Interface (L1237-1360)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 1237-1360
+
+Limpa completamente a interface e todos os dados, restaurando ao estado inicial.
+
+\textbf{Operacoes:}
+\begin{itemize}
+    \item Limpa todos os memos (Input, Output, NFAOutput, MinOutput)
+    \item Limpa todas as TStringList
+    \item Libera arrays de transicoes (SetLength 0)
+    \item Desabilita botoes dependentes
+    \item Redesenha diagramas vazios
+\end{itemize}
+
+\subsection{btnRemoveEpsilonClick - Handler Epsilon (L1395-1566)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 1395-1566
+
+Event handler do botao "AFN-epsilon para AFN". Detecta se entrada e JSON e converte temporariamente. Verifica se ha epsilon-transicoes antes de processar. Invoca RemoveEpsilonTransitions se validacao passar.
+
+\subsection{btnUseAsInputClick - Copiar Resultado (L1603-1720)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 1603-1720
+
+Copia AFN resultante (de memoNFAOutput) para memoInput, permitindo workflow sequencial.
+
+\begin{lstlisting}[style=pascal, caption={btnUseAsInputClick}]
+procedure TFormMain.btnUseAsInputClick(Sender: TObject);
+var i: Integer;
+begin
+  memoInput.Lines.Clear;
+  memoInput.Lines.Add(NFAAlphabet.CommaText.Replace(',', ' '));
+  memoInput.Lines.Add(NFAStates.CommaText.Replace(',', ' '));
+  memoInput.Lines.Add(NFAInitials.CommaText.Replace(',', ' '));
+  memoInput.Lines.Add(NFAFinals.CommaText.Replace(',', ' '));
+  
+  for i := 0 to High(NFATransitions) do
+    memoInput.Lines.Add(NFATransitions[i].FromState + ' ' + 
+                       NFATransitions[i].Symbol + ' ' + 
+                       NFATransitions[i].ToState);
+  
+  ShowMessage('AFN sem epsilon copiado para a entrada!');
+end;
+\end{lstlisting}
+
+\subsection{btnConvertClick - Handler Conversao (L1863-2068)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 1863-2068
+
+Event handler principal do botao "AFN para AFD". Detecta JSON e converte automaticamente. Se detectar epsilon-transicoes, executa workflow completo: AFN-epsilon para AFN para AFD. Invoca ConvertAFNtoAFD ao final.
+
+\newpage
+\section{Parte 2: Conversao AFN para AFD (L2958-3795)}
+
+\subsection{Teoria: Construcao de Subconjuntos}
+
+\subsubsection{A Grande Ideia}
+
+\begin{center}
+\fbox{
+\begin{minipage}{0.9\textwidth}
+\textbf{Principio Fundamental:}\\
+Cada estado do AFD representa um \textbf{conjunto de estados} do AFN onde voce poderia estar simultaneamente.
+\end{minipage}
+}
+\end{center}
+
+\subsubsection{Motivacao: Por Que Precisamos Disto?}
+
+\textbf{Problema:} AFN pode ter multiplas transicoes com mesmo simbolo.
+
+\textbf{Exemplo:}
+\begin{itemize}
+    \item $\delta(q_0, a) = \{q_1, q_2\}$ -- AFN vai para q1 \textbf{E} q2 simultaneamente!
+    \item AFD exige: $\delta(q_0, a) = q_X$ -- apenas UM destino
+\end{itemize}
+
+\textbf{Solucao:} Criar estado $q_X = \{q_1, q_2\}$ no AFD.
+
+\subsubsection{Por Que TStringSet e Essencial?}
+
+\textbf{Problema 1 - Duplicatas:}
+\begin{itemize}
+    \item Ao calcular $\bigcup_{q \in S} \delta(q, a)$, mesmos estados aparecem multiplas vezes
+    \item TStringSet com \texttt{Duplicates := dupIgnore} elimina automaticamente!
+\end{itemize}
+
+\textbf{Problema 2 - Comparacao de Conjuntos:}
+\begin{itemize}
+    \item $\{q_0, q_1\}$ e $\{q_1, q_0\}$ sao o mesmo estado!
+    \item TStringSet com \texttt{Sorted := True} garante ordem alfabetica
+    \item ToString() sempre retorna mesma string para conjuntos equivalentes
+\end{itemize}
+
+\textbf{Problema 3 - Performance:}
+\begin{itemize}
+    \item Busca linear: $O(n)$
+    \item Busca binaria (Sorted=True): $O(\log n)$
+    \item Com milhares de estados, diferenca e gigantesca!
+\end{itemize}
+
+\subsection{Estrutura do Algoritmo ConvertAFNtoAFD (L2958-3795)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 2958-3795
+
+\begin{lstlisting}[style=pascal, caption={Declaracoes}]
+procedure TFormMain.ConvertAFNtoAFD;
+var
+  (* Variaveis para parsing do AFN *)
+  Alphabet, States, Initials, Finals: TStringList;
+  Transitions: array of TTransition;
+  parts: TStringList;
+  i, j, k, tStart: Integer;
+  
+  (* Variaveis para construcao do AFD *)
+  localDFAStates: TStringList;   (* Estados do AFD *)
+  workQ: TStringList;             (* Fila de trabalho BFS *)
+  dfaMap: TStringList;            (* Mapa nome para TStringSet *)
+  isFinal: TStringList;           (* Estados finais do AFD *)
+  
+  curSet, nextSet, cloneSet: TStringSet;
+  sym, key: string;
+  localDFATransitions: TTransitionArray;
+  hasFinal, hasEpsilon: Boolean;
+\end{lstlisting}
+
+\subsection{Declaracao de Variaveis (L2959-2978)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 2959-2978
+
+O algoritmo declara dois grupos de variaveis:
+
+\textbf{Grupo 1 - Parsing do AFN de entrada:}
+\begin{itemize}
+    \item \texttt{Alphabet, States, Initials, Finals}: TStringList para armazenar componentes do AFN
+    \item \texttt{Transitions}: Array dinamico de transicoes do AFN
+    \item \texttt{parts}: TStringList para quebrar linhas em tokens
+    \item \texttt{i, j, k, tStart}: Indices para loops
+\end{itemize}
+
+\textbf{Grupo 2 - Construcao do AFD:}
+\begin{itemize}
+    \item \texttt{localDFAStates}: Lista de nomes dos estados do AFD (strings como "(q0,q1)")
+    \item \texttt{workQ}: Fila de trabalho BFS (estados que precisam ser processados)
+    \item \texttt{dfaMap}: Mapeamento nome $\rightarrow$ conjunto real (TStringSet)
+    \item \texttt{isFinal}: Lista de estados finais do AFD
+    \item \texttt{curSet, nextSet, cloneSet}: TStringSet para manipular conjuntos
+    \item \texttt{localDFATransitions}: Array de transicoes do AFD
+\end{itemize}
+
+\subsection{Limpeza e Inicializacao (L2980-3005)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 2980-3005
+
+\textbf{Por que limpar?} Evitar dados misturados de conversoes anteriores.
+
+\textbf{Procedimento:}
+\begin{enumerate}
+    \item Verifica se objetos existem com \texttt{Assigned()}
+    \item Libera memoria com \texttt{Free()}
+    \item Cria novas instancias vazias
+\end{enumerate}
+
+\textbf{Estruturas recriadas:}
+\begin{itemize}
+    \item NFAAlphabet, NFAStates, NFAInitials, NFAFinals (para guardar AFN)
+    \item DFAStates, DFAFinals (para construir AFD)
+\end{itemize}
+
+\subsection{Validacao de Entrada (L3007-3018)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3007-3018
+
+Verifica se entrada tem pelo menos 4 linhas:
+\begin{enumerate}
+    \item Alfabeto
+    \item Estados
+    \item Iniciais
+    \item Finais
+\end{enumerate}
+
+Se invalida: Mostra mensagem e aborta com \texttt{Exit}.
+
+\subsection{Parse do Alfabeto (L3033-3058)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3033-3058
+
+\textbf{Objetivo:} Ler simbolos do alfabeto da linha 0.
+
+\textbf{Logica:}
+\begin{lstlisting}[style=pascal]
+parts.DelimitedText := Trim(memoInput.Lines[0]);
+for i := 0 to parts.Count - 1 do
+  if (simbolo nao e epsilon) then
+    Alphabet.Add(parts[i]);
+\end{lstlisting}
+
+\textbf{Filtragem de epsilon:} AFD nao pode ter $\varepsilon$-transicoes, entao filtra:
+\begin{itemize}
+    \item '$\varepsilon$' (Unicode)
+    \item 'epsilon' (palavra)
+    \item 'e' (abreviacao)
+    \item '\&' (alternativa)
+\end{itemize}
+
+\subsection{Parse dos Estados (L3067-3075)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3067-3075
+
+\textbf{Objetivo:} Ler lista de estados da linha 1.
+
+Cada estado e uma string (ex: "q0", "q1", "q2").
+
+Armazena em:
+\begin{itemize}
+    \item \texttt{States}: Lista local
+    \item \texttt{NFAStates}: Campo da classe (usado depois)
+\end{itemize}
+
+\subsection{Parse dos Estados Iniciais (L3084-3092)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3084-3092
+
+\textbf{Objetivo:} Ler estados iniciais da linha 2.
+
+\textbf{Importante:} AFN pode ter multiplos iniciais!
+
+No AFD: estado inicial = \textbf{conjunto} dos iniciais do AFN.
+
+\subsection{Parse dos Estados Finais (L3101-3109)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3101-3109
+
+\textbf{Objetivo:} Ler estados finais da linha 3.
+
+\textbf{Regra para AFD:} Estado do AFD e final $\Leftrightarrow$ contem algum estado final do AFN.
+
+\subsection{Parse das Transicoes (L3130-3177)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3130-3177
+
+\textbf{Formato esperado:} \texttt{origem simbolo destino}
+
+\textbf{Algoritmo:}
+\begin{lstlisting}[style=pascal]
+for i := 4 to memoInput.Lines.Count - 1 do
+  parts.DelimitedText := linha;
+  if parts.Count >= 3 then
+    Transicao := (parts[0], parts[1], parts[2]);
+\end{lstlisting}
+
+\textbf{Deteccao de epsilon:} Se encontrar $\varepsilon$-transicao, marca flag \texttt{hasEpsilon}.
+
+\subsection{Aviso de Epsilon (L3179-3191)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3179-3191
+
+Se \texttt{hasEpsilon = True}:
+\begin{itemize}
+    \item Mostra dialogo de aviso
+    \item Orienta usuario: AFN-$\varepsilon$ $\rightarrow$ AFN $\rightarrow$ AFD
+    \item Continua execucao (resultado pode estar incorreto)
+\end{itemize}
+
+\textbf{Por que avisar?} AFD nao pode ter $\varepsilon$ por definicao!
+
+\subsubsection{Filosofia de Validacao: Avisar vs Bloquear}
+
+\textbf{Alternativa 1 - Bloquear execucao:}
+\begin{lstlisting}[style=pascal]
+if hasEpsilon then
+begin
+  ShowMessage('ERRO: AFD nao aceita epsilon!');
+  Exit;  (* Aborta conversao *)
+end;
+\end{lstlisting}
+
+\textbf{Alternativa 2 - Avisar e continuar (implementado):}
+\begin{lstlisting}[style=pascal]
+if hasEpsilon then
+  ShowMessage('AVISO: Entrada tem epsilon. Use RemoveEpsilon primeiro.');
+(* Continua execucao *)
+\end{lstlisting}
+
+\textbf{Por que escolhemos Alternativa 2?}
+\begin{enumerate}
+    \item \textbf{Flexibilidade:} Usuario pode querer testar mesmo assim
+    \item \textbf{Debugging:} Permite ver resultado incorreto para comparacao
+    \item \textbf{Workflow educacional:} Mostra o que acontece com epsilon
+    \item \textbf{Nao-destrutivo:} Nao perde trabalho do usuario
+\end{enumerate}
+
+\textbf{Trade-off:}
+\begin{itemize}
+    \item \textbf{Pro:} Usuario tem controle e visibilidade
+    \item \textbf{Contra:} Usuario pode ignorar aviso e obter resultado errado
+\end{itemize}
+
+\textbf{Decisao de design:} Em ferramenta educacional, preferimos avisar e ensinar ao inves de bloquear.
+
+\subsection{Logging da Entrada (L3206-3217)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3206-3217
+
+Imprime no console (WriteLn) o AFN de entrada para debugging:
+\begin{itemize}
+    \item Alfabeto
+    \item Estados
+    \item Iniciais
+    \item Finais
+    \item Lista de transicoes
+\end{itemize}
+
+\subsection{Criacao das Estruturas BFS (L3251-3257)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3251-3257
+
+\textbf{Estruturas criadas:}
+
+\begin{tabular}{ll}
+\texttt{localDFAStates} & Lista de estados do AFD (nomes) \\
+\texttt{workQ} & Fila BFS (estados a processar) \\
+\texttt{dfaMap} & Mapa nome $\rightarrow$ TStringSet \\
+\texttt{isFinal} & Estados finais do AFD \\
+\end{tabular}
+
+\textbf{Importante:} \texttt{dfaMap.OwnsObjects := True}
+
+$\rightarrow$ libera TStringSets automaticamente!
+
+\subsubsection{Por Que BFS e Nao DFS?}
+
+\textbf{Razao 1 - Ordem Natural:}
+\begin{itemize}
+    \item BFS processa estados por "distancia" do inicial
+    \item Resultado mais intuitivo para visualizacao
+    \item Estados principais aparecem primeiro no output
+\end{itemize}
+
+\textbf{Razao 2 - Memoria Controlada:}
+\begin{itemize}
+    \item DFS: Pilha pode crescer exponencialmente em automatos complexos
+    \item BFS: Fila cresce de forma mais previsivel
+    \item Importante para automatos com milhares de estados
+\end{itemize}
+
+\textbf{Razao 3 - Deteccao de Loops:}
+\begin{itemize}
+    \item BFS detecta estados repetidos naturalmente
+    \item DFS pode ficar preso em ciclos se nao implementado corretamente
+\end{itemize}
+
+\subsubsection{Por Que OwnsObjects = True?}
+
+\textbf{Problema sem OwnsObjects:}
+\begin{lstlisting}[style=pascal]
+dfaMap.AddObject('\{q0,q1\}', set1);
+dfaMap.AddObject('\{q2,q3\}', set2);
+dfaMap.Free;  (* Libera dfaMap mas NAO os TStringSets! *)
+(* MEMORY LEAK! set1 e set2 ainda estao na memoria! *)
+\end{lstlisting}
+
+\textbf{Solucao com OwnsObjects:}
+\begin{lstlisting}[style=pascal]
+dfaMap.OwnsObjects := True;
+dfaMap.AddObject('\{q0,q1\}', set1);
+dfaMap.Free;  (* Libera dfaMap E todos os TStringSets! *)
+(* Sem memory leak! *)
+\end{lstlisting}
+
+\textbf{Por que isso importa?}
+\begin{itemize}
+    \item AFD com 100 estados = 100 TStringSet para liberar manualmente!
+    \item Esqueceu um Free()? Memory leak.
+    \item OwnsObjects = True $\rightarrow$ gerenciamento automatico!
+\end{itemize}
+
+\subsection{Estado Inicial do AFD (L3273-3283)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3273-3283
+
+\textbf{Regra:} Estado inicial do AFD = \textbf{conjunto} dos iniciais do AFN.
+
+\textbf{Algoritmo:}
+\begin{lstlisting}[style=pascal]
+curSet := TStringSet.Create;
+for i := 0 to Initials.Count - 1 do
+  curSet.Add(Initials[i]);
+  
+localDFAStates.Add(GetSetName(curSet));
+workQ.Add(GetSetName(curSet));
+dfaMap.AddObject(GetSetName(curSet), curSet);
+\end{lstlisting}
+
+\textbf{Exemplo:} Se AFN tem iniciais (q0, q1) $\rightarrow$ estado inicial do AFD = "\{q0,q1\}"
+
+\subsection{Loop Principal BFS (L3296-3540)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3296-3540
+
+\textbf{Algoritmo de Busca em Largura:}
+
+\begin{lstlisting}[style=pascal]
+while workQ.Count > 0 do
+  (* 1. Remover estado da fila *)
+  curSet := ProximoEstado();
+  
+  (* 2. Verificar se e final *)
+  if curSet contem algum final do AFN then
+    Marcar como final;
+  
+  (* 3. Para cada simbolo do alfabeto *)
+  for cada simbolo do
+    nextSet := CalcularDestinos(curSet, simbolo);
+    CriarTransicao(curSet, simbolo, nextSet);
+    
+    (* 4. Se nextSet e novo, adicionar a fila *)
+    if nextSet e novo then
+      workQ.Add(nextSet);
+end;
+\end{lstlisting}
+
+\textbf{Invariante:} Todos estados em \texttt{localDFAStates} foram ou serao processados.
+
+\textbf{Terminacao:} Numero de estados $\leq 2^n$ (finito).
+
+\subsubsection{Exemplo Pratico Passo-a-Passo}
+
+\textbf{AFN de entrada:}
+\begin{itemize}
+    \item Estados: $\{q_0, q_1, q_2\}$
+    \item Alfabeto: $\{a, b\}$
+    \item Iniciais: $\{q_0\}$
+    \item Finais: $\{q_2\}$
+    \item Transicoes: $(q_0, a, q_0)$, $(q_0, a, q_1)$, $(q_1, b, q_2)$
+\end{itemize}
+
+\textbf{Execucao do BFS:}
+
+\textbf{Iteracao 1:}
+\begin{enumerate}
+    \item \texttt{workQ = ["\{q0\}"]}, remove "\{q0\}"
+    \item Nao e final (q0 nao e final)
+    \item Com 'a': destinos = \{q0, q1\} $\rightarrow$ transicao (\{q0\}, a, \{q0,q1\})
+    \item Com 'b': destinos = \{\} $\rightarrow$ transicao (\{q0\}, b, \{\})
+    \item Novo estado descoberto: "\{q0,q1\}" $\rightarrow$ adiciona a fila
+    \item \texttt{workQ = ["\{q0,q1\}"]}
+\end{enumerate}
+
+\textbf{Iteracao 2:}
+\begin{enumerate}
+    \item \texttt{workQ = ["\{q0,q1\}"]}, remove "\{q0,q1\}"
+    \item Nao e final (nem q0 nem q1 sao finais)
+    \item Com 'a': destinos = \{q0, q1\} $\rightarrow$ transicao (\{q0,q1\}, a, \{q0,q1\})
+    \item Com 'b': destinos = \{q2\} $\rightarrow$ transicao (\{q0,q1\}, b, \{q2\})
+    \item Novo estado descoberto: "\{q2\}" $\rightarrow$ adiciona a fila
+    \item \texttt{workQ = ["\{q2\}"]}
+\end{enumerate}
+
+\textbf{Iteracao 3:}
+\begin{enumerate}
+    \item \texttt{workQ = ["\{q2\}"]}, remove "\{q2\}"
+    \item E final! (q2 e final)
+    \item Com 'a': destinos = \{\} $\rightarrow$ transicao (\{q2\}, a, \{\})
+    \item Com 'b': destinos = \{\} $\rightarrow$ transicao (\{q2\}, b, \{\})
+    \item Nenhum novo estado
+    \item \texttt{workQ = []}
+\end{enumerate}
+
+\textbf{Fim!} AFD resultante tem 3 estados: \{q0\}, \{q0,q1\}, \{q2\}
+
+\subsection{Remocao da Fila (L3308-3311)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3308-3311
+
+\begin{lstlisting}[style=pascal]
+key := workQ[0];
+workQ.Delete(0);
+curSet := TStringSet(dfaMap.Objects[...]);
+\end{lstlisting}
+
+\textbf{FIFO:} Remove do inicio (BFS), nao do fim.
+
+\subsection{Verificacao de Estado Final (L3326-3330)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3326-3330
+
+\textbf{Regra:} Estado AFD e final $\Leftrightarrow$ \texttt{curSet} contem algum final do AFN.
+
+\begin{lstlisting}[style=pascal]
+hasFinal := False;
+for i := 0 to Finals.Count - 1 do
+  if curSet.Contains(Finals[i]) then 
+    hasFinal := True;
+if hasFinal then isFinal.Add(key);
+\end{lstlisting}
+
+\textbf{Justificativa:} Se caminho leva a estado final do AFN, o conjunto todo e final.
+
+\subsection{Loop de Simbolos (L3351-3525)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3351-3525
+
+Para cada simbolo do alfabeto, calcula proximos estados:
+
+\textbf{Algoritmo:}
+\begin{lstlisting}[style=pascal]
+for i := 0 to Alphabet.Count - 1 do
+  sym := Alphabet[i];
+  nextSet := TStringSet.Create;
+  
+  (* Uniao dos destinos *)
+  for cada q em curSet do
+    for cada transicao (q, sym, r) do
+      nextSet.Add(r);
+  
+  (* Criar transicao AFD *)
+  Transicao := (curSet, sym, nextSet);
+\end{lstlisting}
+
+\textbf{Formula:} $\delta_{AFD}(S, a) = \bigcup_{q \in S} \delta_{AFN}(q, a)$
+
+\subsection{Calculo de Destinos (L3356-3373)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3356-3373
+
+\begin{lstlisting}[style=pascal]
+for j := 0 to curSet.Count - 1 do
+  for k := 0 to High(Transitions) do
+    if (Transitions[k].FromState = curSet.Item(j))
+       and (Transitions[k].Symbol = sym) then
+      nextSet.Add(Transitions[k].ToState);
+\end{lstlisting}
+
+\textbf{Complexidade:} $O(|curSet| \cdot m)$ onde $m$ = transicoes do AFN.
+
+\subsection{Tratamento de Conjunto Vazio (L3375-3379)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3375-3379
+
+Se \texttt{nextSet.IsEmpty}:
+\begin{itemize}
+    \item AFD vai para estado de erro "\{\}"
+    \item Estado de erro NAO e adicionado ao AFD (dead state implicito)
+\end{itemize}
+
+\textbf{Exemplo:} (q0) com 'b' e nenhuma transicao existe $\rightarrow$ "\{\}"
+
+\subsubsection{Por Que Nao Adicionar Estado de Erro?}
+
+\textbf{Razao 1 - Tamanho do AFD:}
+\begin{itemize}
+    \item Estado de erro tem transicoes para si mesmo com TODOS os simbolos
+    \item Em alfabeto grande, adiciona muitas transicoes inuteis
+    \item Exemplo: alfabeto de 26 letras = 26 transicoes extras!
+\end{itemize}
+
+\textbf{Razao 2 - Visualizacao:}
+\begin{itemize}
+    \item Estado de erro polui diagrama
+    \item Usuario sabe: "sem transicao = rejeita"
+    \item Mais limpo omitir
+\end{itemize}
+
+\textbf{Razao 3 - Minimizacao:}
+\begin{itemize}
+    \item Algoritmo de minimizacao remove estado de erro de qualquer forma
+    \item Por que adicionar so para remover depois?
+\end{itemize}
+
+\textbf{Trade-off:}
+\begin{itemize}
+    \item \textbf{Com estado erro:} AFD teoricamente completo
+    \item \textbf{Sem estado erro:} AFD parcial (mas funcionalmente identico)
+\end{itemize}
+
+\textbf{Decisao de implementacao:} Omitir estado de erro para AFD mais limpo e legivel.
+
+\subsection{Registro de Transicao (L3395-3409)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3395-3409
+
+Expande array dinamico e adiciona transicao:
+
+\begin{lstlisting}[style=pascal]
+SetLength(localDFATransitions, Length(...) + 1);
+localDFATransitions[High(...)].FromState := curSet;
+localDFATransitions[High(...)].Symbol := sym;
+localDFATransitions[High(...)].ToState := nextSet;
+\end{lstlisting}
+
+Armazena em DOIS lugares:
+\begin{itemize}
+    \item \texttt{localDFATransitions} (variavel local)
+    \item \texttt{DFATransitions} (campo da classe)
+\end{itemize}
+
+\subsection{Descoberta de Novos Estados (L3426-3439)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3426-3439
+
+\textbf{Condicao:} Estado e novo SE:
+\begin{itemize}
+    \item \texttt{dfaMap.IndexOf(key) = -1} (nao esta no mapa)
+    \item \texttt{key $\neq$ '\{\}' } (nao e estado de erro)
+\end{itemize}
+
+\textbf{Acoes:}
+\begin{lstlisting}[style=pascal]
+cloneSet := nextSet.Clone;
+dfaMap.AddObject(key, cloneSet);
+localDFAStates.Add(key);
+workQ.Add(key);  (* Adicionar a fila! *)
+\end{lstlisting}
+
+\textbf{Por que Clone?} \texttt{nextSet} sera liberado no \texttt{finally}. Precisamos de copia!
+
+\subsubsection{Gerenciamento de Memoria Detalhado}
+
+\textbf{Problema sem Clone():}
+\begin{lstlisting}[style=pascal]
+nextSet := TStringSet.Create;  (* Cria nextSet *)
+dfaMap.AddObject(key, nextSet);  (* Adiciona ao mapa *)
+nextSet.Free;  (* ERRO! dfaMap aponta para memoria liberada! *)
+\end{lstlisting}
+
+\textbf{Por que nextSet precisa ser liberado?}
+\begin{itemize}
+    \item Criado dentro do loop: \texttt{nextSet := TStringSet.Create}
+    \item Sem Free(): memory leak em CADA iteracao!
+    \item AFD com 100 estados = 100 conjuntos nao liberados
+\end{itemize}
+
+\textbf{Solucao: Clone antes de adicionar}
+\begin{lstlisting}[style=pascal]
+nextSet := TStringSet.Create;     (* Conjunto temporario *)
+cloneSet := nextSet.Clone;        (* Copia independente *)
+dfaMap.AddObject(key, cloneSet);  (* Adiciona copia ao mapa *)
+nextSet.Free;                     (* Libera temporario *)
+(* cloneSet sera liberado quando dfaMap for destruido *)
+\end{lstlisting}
+
+\textbf{Ciclo de vida dos objetos:}
+\begin{enumerate}
+    \item \texttt{nextSet}: Vive apenas durante uma iteracao do loop
+    \item \texttt{cloneSet}: Vive ate \texttt{dfaMap.Free}
+    \item \texttt{dfaMap}: Liberado no bloco \texttt{finally} ao fim da funcao
+\end{enumerate}
+
+\subsubsection{Por Que IndexOf ao Inves de Contains?}
+
+\textbf{TStringList.IndexOf vs busca manual:}
+\begin{itemize}
+    \item \texttt{IndexOf(key)} retorna indice (-1 se nao existe)
+    \item Com \texttt{Sorted := True}, usa busca binaria $O(\log n)$
+    \item Loop manual seria $O(n)$
+    \item Com 1000 estados: $\log_2(1000) \approx 10$ vs 1000 comparacoes!
+\end{itemize}
+
+\textbf{Por que comparar com -1?}
+\begin{itemize}
+    \item IndexOf retorna -1 quando nao encontra
+    \item Indices validos: 0, 1, 2, ..., Count-1
+    \item \texttt{IndexOf(key) = -1} $\equiv$ "key nao existe"
+\end{itemize}
+
+\subsection{Formatacao da Saida (L3549-3638)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3549-3638
+
+Apresenta resultado no \texttt{memoOutput} com:
+\begin{itemize}
+    \item Cabecalho decorativo
+    \item Alfabeto
+    \item Lista de estados do AFD
+    \item Estado inicial (sempre o primeiro)
+    \item Estados finais
+    \item Lista de transicoes
+\end{itemize}
+
+\textbf{Tambem copia para campos da classe:} DFAStates, DFAInitial, DFAFinals.
+
+\subsubsection{Por Que Dois Destinos para o Resultado?}
+
+\textbf{Destino 1 - memoOutput (UI):}
+\begin{itemize}
+    \item Usuario ve resultado imediatamente
+    \item Formato texto legivel
+    \item Pode copiar/colar
+    \item Pode salvar em arquivo
+\end{itemize}
+
+\textbf{Destino 2 - Campos da classe (DFAStates, etc):}
+\begin{itemize}
+    \item Proxima etapa (minimizacao) precisa dos dados
+    \item Funcao DrawAutomaton precisa desenhar diagrama
+    \item Botao "Usar como entrada" precisa copiar
+\end{itemize}
+
+\textbf{Exemplo de pipeline:}
+\begin{enumerate}
+    \item Conversao AFN $\rightarrow$ AFD: resultado em DFAStates
+    \item Usuario clica "Minimizar": le DFAStates, escreve MinDFAStates
+    \item Usuario clica "Desenhar": le DFAStates, desenha diagrama
+    \item Usuario clica "Exportar": le memoOutput, salva arquivo
+\end{enumerate}
+
+\textbf{Por que nao armazenar APENAS em UI?}
+\begin{itemize}
+    \item Parse de texto e custoso ($O(n \cdot m)$)
+    \item Parsing pode introduzir erros
+    \item Estruturas de dados ja existem, reaproveitar!
+\end{itemize}
+
+\subsubsection{Formato de Estados do AFD}
+
+\textbf{Notacao escolhida:} "\{q0,q1,q2\}"
+
+\textbf{Por que chaves?}
+\begin{itemize}
+    \item Notacao matematica padrao para conjuntos
+    \item Usuario reconhece: "isso e um conjunto!"
+    \item Diferencia de estados simples: "q0" vs "\{q0\}"
+\end{itemize}
+
+\textbf{Por que virgulas sem espacos?}
+\begin{itemize}
+    \item ToString() de TStringSet usa CommaText
+    \item CommaText automaticamente coloca virgulas
+    \item Formato compacto: "\{q0,q1\}" vs "\{q0, q1\}"
+\end{itemize}
+
+\textbf{Alternativas consideradas:}
+\begin{itemize}
+    \item "(q0,q1)" -- parece tupla, nao conjunto
+    \item "[q0,q1]" -- parece array
+    \item "q0q1" -- nao distingue "q01" de "q0,q1"
+\end{itemize}
+
+\subsection{Habilitacao da Interface (L3640-3647)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3640-3647
+
+\begin{lstlisting}[style=pascal]
+btnMinimize.Enabled := True;
+PageControl2.ActivePage := TabOutput;
+PaintBoxNFA.Invalidate;
+PaintBoxDFA.Invalidate;
+\end{lstlisting}
+
+\textbf{Acoes:}
+\begin{itemize}
+    \item Habilita botao "Minimizar AFD"
+    \item Muda para aba de resultado
+    \item Redesenha diagramas
+\end{itemize}
+
+\subsection{Limpeza de Memoria (L3650-3665)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3650-3665
+
+Libera TODAS estruturas locais no \texttt{finally}:
+
+\begin{lstlisting}[style=pascal]
+localDFAStates.Free;
+workQ.Free;
+dfaMap.Free;  (* Libera TStringSets tambem! *)
+isFinal.Free;
+Alphabet.Free;
+States.Free;
+Initials.Free;
+Finals.Free;
+parts.Free;
+\end{lstlisting}
+
+\textbf{IMPORTANTE:} \texttt{dfaMap.OwnsObjects = True} $\rightarrow$ Free() tambem libera todos os TStringSet!
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{|l|c|p{5cm}|}
+\hline
+\textbf{Funcao} & \textbf{Linhas} & \textbf{Descricao} \\
+\hline
+\multicolumn{3}{|c|}{\textbf{PARTE 1: Estruturas e Interface (L1-2254)}} \\
+\hline
+TTransition (type) & 39-43 & Record de transicao \\
+TTransitionArray (type) & 49 & Array dinamico \\
+Variaveis globais & 135-165 & AFN-e, AFN, AFD, MinDFA \\
+TStringSet (class) & 299-311 & Declaracao da classe \\
+TStringSet.Create & 333-337 & Construtor \\
+TStringSet.Destroy & 339-343 & Destrutor \\
+TStringSet.Add & 360-367 & Adicionar elemento \\
+TStringSet.Contains & 377-381 & Verificar existencia \\
+TStringSet.Clone & 398-410 & Clonar conjunto \\
+TStringSet.IsEmpty & 414-418 & Verificar vazio \\
+TStringSet.ToString & 431-445 & Converter para string \\
+TStringSet.Count & 449-453 & Numero de elementos \\
+TStringSet.Item & 464-475 & Acessar por indice \\
+FormCreate & 488-571 & Inicializar interface \\
+LoadTestFiles & 586-643 & Scan arquivos testes/ \\
+OnTestFileSelected & 645-679 & Handler ComboBox \\
+ConvertJSONToText & 693-812 & Converter arquivo JSON \\
+ConvertJSONTextToText & 829-918 & Converter string JSON \\
+LoadSampleFile & 952-1043 & Carregar exemplo \\
+btnLoadFileClick & 1085-1170 & Handler carregar arquivo \\
+btnClearClick & 1237-1360 & Limpar interface \\
+btnRemoveEpsilonClick & 1395-1566 & Handler remocao epsilon \\
+btnUseAsInputClick & 1603-1720 & Copiar AFN para input \\
+btnConvertClick & 1863-2068 & Handler conversao AFN para AFD \\
+\hline
+\multicolumn{3}{|c|}{\textbf{PARTE 2: Algoritmo AFN para AFD (L2958-3795)}} \\
+\hline
+ConvertAFNtoAFD (inicio) & 2958-3020 & Declaracoes e variaveis \\
+Limpeza e criacao & 2970-3010 & Liberar e criar estruturas \\
+Validacao entrada & 3011-3018 & Verificar 4+ linhas \\
+Parse alfabeto & 3040-3058 & Ler linha 0 (simbolos) \\
+Parse estados & 3060-3068 & Ler linha 1 (estados) \\
+Parse iniciais & 3070-3078 & Ler linha 2 (iniciais) \\
+Parse finais & 3080-3088 & Ler linha 3 (finais) \\
+Parse transicoes & 3090-3220 & Ler linhas 4+ (transicoes) \\
+Logging entrada & 3222-3235 & Exibir AFN no console \\
+Inicializacao BFS & 3237-3258 & Criar estruturas AFD \\
+Estado inicial AFD & 3260-3270 & Conjunto dos iniciais \\
+Loop principal BFS & 3272-3580 & Subset construction \\
+Determinar finais & 3360-3380 & Marcar estados finais \\
+Gerar transicoes & 3390-3500 & Para cada simbolo \\
+Descobrir novos estados & 3510-3550 & Adicionar a fila \\
+Formatacao resultado & 3582-3680 & Texto para memoOutput \\
+Atualizar interface & 3682-3696 & Habilitar botoes \\
+PaintBoxEpsilonNFAPaint & 3698-3723 & Desenhar AFN-epsilon \\
+PaintBoxNFAPaint & 3725-3737 & Desenhar AFN \\
+PaintBoxDFAPaint & 3739-3769 & Desenhar AFD \\
+PaintBoxMinDFAPaint & 3771-3792 & Desenhar MinDFA \\
+\hline
+\end{tabular}
+\caption{Indice Completo com Linhas Exatas}
+\end{table}
+
+\subsection{Paint Handlers - Desenho de Diagramas (L3698-3792)}
+
+\textbf{Referencia:} \texttt{MainForm.pas} linhas 3698-3792
+
+O codigo implementa 4 event handlers para desenhar diagramas de automatos.
+
+\subsubsection{PaintBoxEpsilonNFAPaint (L3698-3710)}
+
+\textbf{Proposito:} Desenhar AFN-$\varepsilon$ no painel grafico.
+
+\textbf{Quando e chamado:}
+\begin{itemize}
+    \item Primeira exibicao da aba
+    \item Apos \texttt{Invalidate()}
+    \item Redimensionamento da janela
+\end{itemize}
+
+\begin{lstlisting}[style=pascal]
+procedure TFormMain.PaintBoxEpsilonNFAPaint(Sender: TObject);
+begin
+  if not Assigned(EpsilonNFAStates) then Exit;
+  DrawAutomaton(PaintBoxEpsilonNFA.Canvas, 
+                EpsilonNFAStates, EpsilonNFAInitials,
+                EpsilonNFAFinals, EpsilonNFATransitions);
+end;
+\end{lstlisting}
+
+\textbf{Validacao:} Se nao ha dados, sai sem desenhar.
+
+\subsubsection{PaintBoxNFAPaint (L3712-3718)}
+
+\textbf{Proposito:} Desenhar AFN (sem epsilon) no painel.
+
+Mesmo padrao do anterior, mas usa estruturas \texttt{NFAXXX}.
+
+\subsubsection{PaintBoxDFAPaint (L3720-3741)}
+
+\textbf{Proposito:} Desenhar AFD no painel.
+
+\textbf{Diferenca importante:} AFD tem apenas 1 estado inicial!
+
+\begin{lstlisting}[style=pascal]
+procedure TFormMain.PaintBoxDFAPaint(Sender: TObject);
+var Initials: TStringList;
+begin
+  if not Assigned(DFAStates) then Exit;
+  
+  Initials := TStringList.Create;
+  try
+    if DFAStates.Count > 0 then
+      Initials.Add(DFAStates[0]);  (* Primeiro = inicial *)
+    
+    DrawAutomaton(PaintBoxDFA.Canvas, DFAStates, 
+                  Initials, DFAFinals, DFATransitions);
+  finally
+    Initials.Free;  (* Liberar memoria! *)
+  end;
+end;
+\end{lstlisting}
+
+\textbf{Por que TStringList temporaria?} DrawAutomaton espera TStringList de iniciais. AFD tem string unica, precisa converter.
+
+\subsubsection{PaintBoxMinDFAPaint (L3743-3764)}
+
+\textbf{Proposito:} Desenhar AFD Minimizado no painel.
+
+Mesmo padrao do PaintBoxDFAPaint, mas usa:
+\begin{itemize}
+    \item \texttt{MinDFAStates}
+    \item \texttt{MinDFAInitial}
+    \item \texttt{MinDFAFinals}
+    \item \texttt{MinDFATransitions}
+\end{itemize}
+
+\subsection{Complexidade do Algoritmo Completo}
+
+\textbf{Analise de cada parte:}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Operacao} & \textbf{Complexidade} \\
+\hline
+Parse entrada & $O(n + m)$ \\
+Estado inicial & $O(n_{init})$ \\
+Loop principal BFS & $O(2^n)$ iteracoes \\
+Por cada estado & $O(|\Sigma| \cdot |S| \cdot m)$ \\
+Verificacao final & $O(|S| \cdot |F|)$ \\
+Calculo destinos & $O(|S| \cdot m)$ \\
+\hline
+\textbf{Total pior caso} & $\mathbf{O(2^n \cdot |\Sigma| \cdot n \cdot m)}$ \\
+\hline
+\end{tabular}
+\caption{Complexidade do Subset Construction}
+\end{table}
+
+Onde:
+\begin{itemize}
+    \item $n$ = numero de estados do AFN
+    \item $m$ = numero de transicoes do AFN
+    \item $|\Sigma|$ = tamanho do alfabeto
+    \item $|S|$ = tamanho medio dos conjuntos
+    \item $|F|$ = numero de estados finais
+\end{itemize}
+
+\textbf{Explosao exponencial:} No pior caso, AFD pode ter $2^n$ estados!
+
+\textbf{Exemplo:} AFN com 10 estados $\rightarrow$ AFD com ate 1024 estados.
+
+\subsection{Mapa Completo de Funcoes}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|c|p{6cm}|}
+\hline
+\textbf{Funcao} & \textbf{Linhas} & \textbf{Descricao} \\
+\hline
+\multicolumn{3}{|c|}{\textbf{PARTE 1: Estruturas e Interface}} \\
+\hline
+TTransition & 39-43 & Record de transicao \\
+TStringSet.Create & 333-337 & Construtor \\
+TStringSet.Destroy & 339-343 & Destrutor \\
+FormCreate & 488-571 & Inicializar interface \\
+LoadTestFiles & 586-643 & Scan arquivos testes/ \\
+ConvertJSONToText & 693-812 & Converter arquivo JSON \\
+ConvertJSONTextToText & 829-918 & Converter string JSON \\
+LoadSampleFile & 952-1043 & Carregar exemplo \\
+btnLoadFileClick & 1085-1170 & Handler carregar arquivo \\
+btnClearClick & 1237-1360 & Limpar interface \\
+btnRemoveEpsilonClick & 1395-1566 & Handler remocao epsilon \\
+btnUseAsInputClick & 1603-1720 & Copiar AFN para input \\
+btnConvertClick & 1863-2068 & Handler conversao AFN para AFD \\
+GetSetName & 2006-2058 & TStringSet para String \\
+ComputeEpsilonClosure & 2109-2300 & Calcular epsilon-fecho \\
+\hline
+\multicolumn{3}{|c|}{\textbf{PARTE 2: Algoritmo AFN para AFD}} \\
+\hline
+ConvertAFNtoAFD (inicio) & 2958-3020 & Declaracoes e init \\
+Parse alfabeto & 3040-3055 & Ler linha 0 \\
+Parse estados & 3057-3065 & Ler linha 1 \\
+Parse iniciais & 3067-3075 & Ler linha 2 \\
+Parse finais & 3077-3085 & Ler linha 3 \\
+Parse transicoes & 3150-3220 & Ler linhas 4+ \\
+Inicializacao & 3221-3270 & Criar estruturas AFD \\
+Loop principal & 3271-3600 & BFS subset construction \\
+Formatacao saida & 3601-3720 & Gerar memoOutput \\
+PaintBoxEpsilonNFAPaint & 3721-3735 & Desenhar AFN-epsilon \\
+PaintBoxNFAPaint & 3737-3745 & Desenhar AFN \\
+PaintBoxDFAPaint & 3747-3765 & Desenhar AFD \\
+PaintBoxMinDFAPaint & 3767-3785 & Desenhar MinDFA \\
+\hline
+\end{tabular}
+\caption{Indice Completo de Funcoes - Secoes do Henrique}
+\end{table}
+
+\newpage
+\section{Conclusao}
+
+\subsection{Resumo das Responsabilidades}
+
+\textbf{Henrique implementou:}
+
+\begin{enumerate}
+    \item \textbf{Estruturas de Dados Fundamentais}
+    \begin{itemize}
+        \item TTransition (record de transicao)
+        \item TStringSet (classe de conjuntos)
+        \item Variaveis globais para AFN/AFD
+    \end{itemize}
+    
+    \item \textbf{Interface e Carregamento}
+    \begin{itemize}
+        \item Inicializacao do formulario
+        \item Scan de arquivos de teste
+        \item Parser JSON para TXT
+    \end{itemize}
+    
+    \item \textbf{Algoritmo Principal: AFN para AFD}
+    \begin{itemize}
+        \item Construcao de subconjuntos
+        \item Determinacao de estados finais
+        \item Geracao de transicoes deterministicas
+        \item Logging e interface automatica
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Pontos-Chave para Apresentacao}
+
+\begin{enumerate}
+    \item \textbf{TStringSet e essencial} - evita duplicatas nos conjuntos
+    \item \textbf{Cada estado do AFD = conjunto de estados do AFN}
+    \item \textbf{Loop principal:} Para cada conjunto nao processado, para cada simbolo, calcule TODOS os destinos possiveis
+    \item \textbf{Estado final:} Se o conjunto contem pelo menos um estado final do AFN
+    \item \textbf{Complexidade:} Exponencial no pior caso ($2^n$), mas tipico e linear
+    \item \textbf{Parse robusto:} Aceita JSON e TXT, converte automaticamente
+    \item \textbf{Validacao completa:} Detecta epsilon e orienta usuario sobre workflow correto
+\end{enumerate}
+
+\subsection{Complexidade do Algoritmo}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|c|l|}
+\hline
+\textbf{Operacao} & \textbf{Complexidade} & \textbf{Motivo} \\
+\hline
+Estados do AFD & $O(2^n)$ & No pior caso, todos subconjuntos \\
+Loop principal & $O(estados \cdot |\Sigma|)$ & Para cada estado/simbolo \\
+Busca de transicoes & $O(m)$ & $m$ = transicoes do AFN \\
+\hline
+\textbf{Total} & $\mathbf{O(2^n \cdot |\Sigma| \cdot m)}$ & Pior caso exponencial \\
+\hline
+\end{tabular}
+\caption{Analise de Complexidade}
+\end{table}
+
+\end{document}

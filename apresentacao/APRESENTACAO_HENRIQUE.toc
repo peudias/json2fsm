@@ -1,0 +1,76 @@
+\babel@toc {brazil}{}\relax 
+\contentsline {section}{\numberline {1}Introducao}{3}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Visao Geral do Projeto}{3}{subsection.1.1}%
+\contentsline {section}{\numberline {2}Parte 1: Estruturas de Dados e Interface (L1-2254)}{4}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Visao Geral da Parte 1}{4}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Tipos Fundamentais (L39-50)}{4}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}TTransition - Record de Transicao (L39-43)}{4}{subsubsection.2.2.1}%
+\contentsline {subsubsection}{\numberline {2.2.2}TTransitionArray - Array Dinamico (L49)}{4}{subsubsection.2.2.2}%
+\contentsline {subsection}{\numberline {2.3}Classe TFormMain - Formulario Principal (L50-134)}{5}{subsection.2.3}%
+\contentsline {subsubsection}{\numberline {2.3.1}Declaracao da Classe (L76-130)}{5}{subsubsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.4}Variaveis Globais dos Automatos (L135-165)}{5}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}Declaracoes de Metodos Privados (L166-298)}{6}{subsection.2.5}%
+\contentsline {subsubsection}{\numberline {2.5.1}RemoveEpsilonTransitions (L174)}{6}{subsubsection.2.5.1}%
+\contentsline {subsubsection}{\numberline {2.5.2}ConvertAFNtoAFD (L190)}{6}{subsubsection.2.5.2}%
+\contentsline {subsubsection}{\numberline {2.5.3}MinimizeDFA (L207)}{6}{subsubsection.2.5.3}%
+\contentsline {subsubsection}{\numberline {2.5.4}Metodos Auxiliares (L222-298)}{7}{subsubsection.2.5.4}%
+\contentsline {subsection}{\numberline {2.6}TStringSet - Classe de Conjuntos (L299-475)}{7}{subsection.2.6}%
+\contentsline {subsubsection}{\numberline {2.6.1}Declaracao da Classe (L299-311)}{7}{subsubsection.2.6.1}%
+\contentsline {subsubsection}{\numberline {2.6.2}Implementacao dos Metodos (L333-475)}{8}{subsubsection.2.6.2}%
+\contentsline {subsection}{\numberline {2.7}Inicializacao da Interface (L488-571)}{8}{subsection.2.7}%
+\contentsline {subsection}{\numberline {2.8}Parser JSON para TXT (L693-918)}{8}{subsection.2.8}%
+\contentsline {subsection}{\numberline {2.9}LoadSampleFile - Exemplo Padrao (L952-1043)}{8}{subsection.2.9}%
+\contentsline {subsection}{\numberline {2.10}btnLoadFileClick - Carregar Arquivo (L1085-1170)}{9}{subsection.2.10}%
+\contentsline {subsection}{\numberline {2.11}btnClearClick - Limpar Interface (L1237-1360)}{9}{subsection.2.11}%
+\contentsline {subsection}{\numberline {2.12}btnRemoveEpsilonClick - Handler Epsilon (L1395-1566)}{9}{subsection.2.12}%
+\contentsline {subsection}{\numberline {2.13}btnUseAsInputClick - Copiar Resultado (L1603-1720)}{9}{subsection.2.13}%
+\contentsline {subsection}{\numberline {2.14}btnConvertClick - Handler Conversao (L1863-2068)}{10}{subsection.2.14}%
+\contentsline {section}{\numberline {3}Parte 2: Conversao AFN para AFD (L2958-3795)}{11}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Teoria: Construcao de Subconjuntos}{11}{subsection.3.1}%
+\contentsline {subsubsection}{\numberline {3.1.1}A Grande Ideia}{11}{subsubsection.3.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.2}Motivacao: Por Que Precisamos Disto?}{11}{subsubsection.3.1.2}%
+\contentsline {subsubsection}{\numberline {3.1.3}Por Que TStringSet e Essencial?}{11}{subsubsection.3.1.3}%
+\contentsline {subsection}{\numberline {3.2}Estrutura do Algoritmo ConvertAFNtoAFD (L2958-3795)}{11}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Declaracao de Variaveis (L2959-2978)}{12}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Limpeza e Inicializacao (L2980-3005)}{12}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}Validacao de Entrada (L3007-3018)}{13}{subsection.3.5}%
+\contentsline {subsection}{\numberline {3.6}Parse do Alfabeto (L3033-3058)}{13}{subsection.3.6}%
+\contentsline {subsection}{\numberline {3.7}Parse dos Estados (L3067-3075)}{13}{subsection.3.7}%
+\contentsline {subsection}{\numberline {3.8}Parse dos Estados Iniciais (L3084-3092)}{13}{subsection.3.8}%
+\contentsline {subsection}{\numberline {3.9}Parse dos Estados Finais (L3101-3109)}{14}{subsection.3.9}%
+\contentsline {subsection}{\numberline {3.10}Parse das Transicoes (L3130-3177)}{14}{subsection.3.10}%
+\contentsline {subsection}{\numberline {3.11}Aviso de Epsilon (L3179-3191)}{14}{subsection.3.11}%
+\contentsline {subsubsection}{\numberline {3.11.1}Filosofia de Validacao: Avisar vs Bloquear}{14}{subsubsection.3.11.1}%
+\contentsline {subsection}{\numberline {3.12}Logging da Entrada (L3206-3217)}{15}{subsection.3.12}%
+\contentsline {subsection}{\numberline {3.13}Criacao das Estruturas BFS (L3251-3257)}{15}{subsection.3.13}%
+\contentsline {subsubsection}{\numberline {3.13.1}Por Que BFS e Nao DFS?}{15}{subsubsection.3.13.1}%
+\contentsline {subsubsection}{\numberline {3.13.2}Por Que OwnsObjects = True?}{16}{subsubsection.3.13.2}%
+\contentsline {subsection}{\numberline {3.14}Estado Inicial do AFD (L3273-3283)}{16}{subsection.3.14}%
+\contentsline {subsection}{\numberline {3.15}Loop Principal BFS (L3296-3540)}{16}{subsection.3.15}%
+\contentsline {subsubsection}{\numberline {3.15.1}Exemplo Pratico Passo-a-Passo}{17}{subsubsection.3.15.1}%
+\contentsline {subsection}{\numberline {3.16}Remocao da Fila (L3308-3311)}{18}{subsection.3.16}%
+\contentsline {subsection}{\numberline {3.17}Verificacao de Estado Final (L3326-3330)}{18}{subsection.3.17}%
+\contentsline {subsection}{\numberline {3.18}Loop de Simbolos (L3351-3525)}{18}{subsection.3.18}%
+\contentsline {subsection}{\numberline {3.19}Calculo de Destinos (L3356-3373)}{19}{subsection.3.19}%
+\contentsline {subsection}{\numberline {3.20}Tratamento de Conjunto Vazio (L3375-3379)}{19}{subsection.3.20}%
+\contentsline {subsubsection}{\numberline {3.20.1}Por Que Nao Adicionar Estado de Erro?}{19}{subsubsection.3.20.1}%
+\contentsline {subsection}{\numberline {3.21}Registro de Transicao (L3395-3409)}{20}{subsection.3.21}%
+\contentsline {subsection}{\numberline {3.22}Descoberta de Novos Estados (L3426-3439)}{20}{subsection.3.22}%
+\contentsline {subsubsection}{\numberline {3.22.1}Gerenciamento de Memoria Detalhado}{20}{subsubsection.3.22.1}%
+\contentsline {subsubsection}{\numberline {3.22.2}Por Que IndexOf ao Inves de Contains?}{21}{subsubsection.3.22.2}%
+\contentsline {subsection}{\numberline {3.23}Formatacao da Saida (L3549-3638)}{21}{subsection.3.23}%
+\contentsline {subsubsection}{\numberline {3.23.1}Por Que Dois Destinos para o Resultado?}{21}{subsubsection.3.23.1}%
+\contentsline {subsubsection}{\numberline {3.23.2}Formato de Estados do AFD}{22}{subsubsection.3.23.2}%
+\contentsline {subsection}{\numberline {3.24}Habilitacao da Interface (L3640-3647)}{23}{subsection.3.24}%
+\contentsline {subsection}{\numberline {3.25}Limpeza de Memoria (L3650-3665)}{23}{subsection.3.25}%
+\contentsline {subsection}{\numberline {3.26}Paint Handlers - Desenho de Diagramas (L3698-3792)}{23}{subsection.3.26}%
+\contentsline {subsubsection}{\numberline {3.26.1}PaintBoxEpsilonNFAPaint (L3698-3710)}{23}{subsubsection.3.26.1}%
+\contentsline {subsubsection}{\numberline {3.26.2}PaintBoxNFAPaint (L3712-3718)}{24}{subsubsection.3.26.2}%
+\contentsline {subsubsection}{\numberline {3.26.3}PaintBoxDFAPaint (L3720-3741)}{24}{subsubsection.3.26.3}%
+\contentsline {subsubsection}{\numberline {3.26.4}PaintBoxMinDFAPaint (L3743-3764)}{24}{subsubsection.3.26.4}%
+\contentsline {subsection}{\numberline {3.27}Complexidade do Algoritmo Completo}{24}{subsection.3.27}%
+\contentsline {subsection}{\numberline {3.28}Mapa Completo de Funcoes}{25}{subsection.3.28}%
+\contentsline {section}{\numberline {4}Conclusao}{26}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Resumo das Responsabilidades}{26}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Pontos-Chave para Apresentacao}{26}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Complexidade do Algoritmo}{26}{subsection.4.3}%
